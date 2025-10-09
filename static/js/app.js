@@ -144,8 +144,10 @@ async function handleCalculate() {
         showResults(result);
 
     } catch (error) {
+        console.error('Error in handleCalculate:', error);
+        console.error('Error stack:', error.stack);
         hideLoading();
-        showError(error.message);
+        showError(error.message || 'An unexpected error occurred. Check console for details.');
     }
 }
 
@@ -153,23 +155,36 @@ async function geocodeLocation(location) {
     console.log('Geocoding:', location);
     console.log('API URL:', `${API_BASE}/api/geocode`);
 
-    const response = await fetch(`${API_BASE}/api/geocode`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ location })
-    });
+    try {
+        const response = await fetch(`${API_BASE}/api/geocode`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ location })
+        });
 
-    console.log('Response status:', response.status);
-    const data = await response.json();
-    console.log('Geocode result:', data);
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
 
-    if (!data.success) {
-        throw new Error(data.error || 'Geocoding failed');
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Response error body:', text);
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const data = await response.json();
+        console.log('Geocode result:', data);
+
+        if (!data.success) {
+            throw new Error(data.error || 'Geocoding failed');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        throw error;
     }
-
-    return data;
 }
 
 async function calculatePosition(data) {
