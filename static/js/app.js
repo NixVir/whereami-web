@@ -135,11 +135,13 @@ async function handleCalculate() {
         const result = await calculatePosition(calculationData);
 
         // Store data and show results
+        console.log('Storing result and preparing to show');
         currentData = result;
         updateLoadingStatus('Preparing visualization...');
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
+        console.log('Hiding loading and showing results');
         hideLoading();
         showResults(result);
 
@@ -224,36 +226,52 @@ async function calculatePosition(data) {
 }
 
 function showResults(data) {
-    // Hide input panel, show results panel
-    document.getElementById('input-panel').style.display = 'none';
-    document.getElementById('results-panel').style.display = 'block';
+    console.log('showResults called with data:', data);
 
-    // Update summary
-    const years = data.displacement.time_elapsed_years.toFixed(2);
-    document.getElementById('journey-summary').textContent =
-        `From ${data.birth.location.address} to ${data.current.location.address} over ${years} years`;
+    try {
+        // Hide input panel, show results panel
+        console.log('Hiding input panel, showing results panel');
+        document.getElementById('input-panel').style.display = 'none';
+        document.getElementById('results-panel').style.display = 'block';
 
-    // Update stats
-    document.getElementById('distance-traveled').textContent =
-        formatLargeNumber(data.displacement.magnitude_km);
+        // Update summary
+        console.log('Updating summary');
+        const years = data.displacement.time_elapsed_years.toFixed(2);
+        document.getElementById('journey-summary').textContent =
+            `From ${data.birth.location.address} to ${data.current.location.address} over ${years} years`;
 
-    document.getElementById('time-elapsed').textContent =
-        years;
+        // Update stats
+        console.log('Updating stats');
+        document.getElementById('distance-traveled').textContent =
+            formatLargeNumber(data.displacement.magnitude_km);
 
-    document.getElementById('current-velocity').textContent =
-        data.current.velocities.total.magnitude.toFixed(2);
+        document.getElementById('time-elapsed').textContent =
+            years;
 
-    document.getElementById('light-years').textContent =
-        data.displacement.magnitude_ly.toFixed(6);
+        document.getElementById('current-velocity').textContent =
+            data.current.velocities.total.magnitude.toFixed(2);
 
-    // Update spacecraft comparisons
-    displaySpacecraftComparisons(data.spacecraft_comparisons);
+        document.getElementById('light-years').textContent =
+            data.displacement.magnitude_ly.toFixed(6);
 
-    // Update technical details
-    displayVelocityBreakdown(data.current.velocities);
+        // Update spacecraft comparisons
+        console.log('Updating spacecraft comparisons');
+        displaySpacecraftComparisons(data.spacecraft_comparisons);
 
-    // Load into visualization
-    visualization.loadJourneyData(data);
+        // Update technical details
+        console.log('Updating velocity breakdown');
+        displayVelocityBreakdown(data.current.velocities);
+
+        // Load into visualization
+        console.log('Loading visualization data');
+        visualization.loadJourneyData(data);
+
+        console.log('showResults completed successfully');
+    } catch (error) {
+        console.error('Error in showResults:', error);
+        console.error('Error stack:', error.stack);
+        throw error;
+    }
 }
 
 function displaySpacecraftComparisons(spacecraft) {
