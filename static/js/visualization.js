@@ -122,6 +122,38 @@ class CosmicVisualization {
         return new THREE.Points(geometry, material);
     }
 
+    createPositionMarker(position, color, label) {
+        // Create a glowing sphere marker
+        const geometry = new THREE.SphereGeometry(3, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.9
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.set(position.x, position.y, position.z);
+
+        // Add a glow effect with a larger transparent sphere
+        const glowGeometry = new THREE.SphereGeometry(6, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.set(position.x, position.y, position.z);
+
+        // Add pulsing animation data
+        sphere.userData = { scale: 1, growing: true, label: label };
+        glow.userData = { scale: 1, growing: true };
+
+        this.scene.add(sphere);
+        this.scene.add(glow);
+
+        return { sphere, glow };
+    }
+
     createJourneyPath(startPos, endPos) {
         // Create a curved path from start to end
         const curve = new THREE.CatmullRomCurve3([
@@ -137,9 +169,22 @@ class CosmicVisualization {
         const points = curve.getPoints(200);
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
+        // Create gradient colors along the path
+        const colors = [];
+        const startColor = new THREE.Color(0x00ff88); // Green for birth
+        const endColor = new THREE.Color(0xff0088);   // Pink for current
+
+        for (let i = 0; i < points.length; i++) {
+            const t = i / (points.length - 1);
+            const color = new THREE.Color().lerpColors(startColor, endColor, t);
+            colors.push(color.r, color.g, color.b);
+        }
+
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
         const material = new THREE.LineBasicMaterial({
-            color: 0xff00ff,
-            linewidth: 2,
+            vertexColors: true,
+            linewidth: 3,
             transparent: true,
             opacity: 0.8
         });
@@ -157,6 +202,16 @@ class CosmicVisualization {
     loadJourneyData(data) {
         this.journeyData = data;
 
+        // Remove old markers if they exist
+        if (this.birthMarker) {
+            this.scene.remove(this.birthMarker.sphere);
+            this.scene.remove(this.birthMarker.glow);
+        }
+        if (this.currentMarker) {
+            this.scene.remove(this.currentMarker.sphere);
+            this.scene.remove(this.currentMarker.glow);
+        }
+
         // Normalize coordinates to reasonable 3D space
         const scale = 100;
 
@@ -171,6 +226,10 @@ class CosmicVisualization {
             y: (data.current.location.latitude / 90) * scale,
             z: 0
         };
+
+        // Create position markers
+        this.birthMarker = this.createPositionMarker(birthPos, 0x00ff88, 'Birth');
+        this.currentMarker = this.createPositionMarker(currentPos, 0xff0088, 'Current');
 
         // Create journey path
         this.journeyCurve = this.createJourneyPath(currentPos, birthPos);
@@ -245,6 +304,47 @@ class CosmicVisualization {
         }
         if (this.particles.cosmic) {
             this.particles.cosmic.rotation.y += 0.00002;
+        }
+
+        // Animate markers with pulsing effect
+        if (this.birthMarker) {
+            const sphere = this.birthMarker.sphere;
+            const glow = this.birthMarker.glow;
+
+            if (sphere.userData.growing) {
+                sphere.userData.scale += 0.01;
+                if (sphere.userData.scale >= 1.2) {
+                    sphere.userData.growing = false;
+                }
+            } else {
+                sphere.userData.scale -= 0.01;
+                if (sphere.userData.scale <= 0.8) {
+                    sphere.userData.growing = true;
+                }
+            }
+
+            sphere.scale.set(sphere.userData.scale, sphere.userData.scale, sphere.userData.scale);
+            glow.scale.set(sphere.userData.scale, sphere.userData.scale, sphere.userData.scale);
+        }
+
+        if (this.currentMarker) {
+            const sphere = this.currentMarker.sphere;
+            const glow = this.currentMarker.glow;
+
+            if (sphere.userData.growing) {
+                sphere.userData.scale += 0.01;
+                if (sphere.userData.scale >= 1.2) {
+                    sphere.userData.growing = false;
+                }
+            } else {
+                sphere.userData.scale -= 0.01;
+                if (sphere.userData.scale <= 0.8) {
+                    sphere.userData.growing = true;
+                }
+            }
+
+            sphere.scale.set(sphere.userData.scale, sphere.userData.scale, sphere.userData.scale);
+            glow.scale.set(sphere.userData.scale, sphere.userData.scale, sphere.userData.scale);
         }
 
         this.renderer.render(this.scene, this.camera);
