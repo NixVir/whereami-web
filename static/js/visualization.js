@@ -122,6 +122,36 @@ class CosmicVisualization {
         return new THREE.Points(geometry, material);
     }
 
+    createTextLabel(text, position, color) {
+        // Create a canvas for the text
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 128;
+
+        // Draw text
+        context.fillStyle = color;
+        context.font = 'Bold 48px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, 128, 64);
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+
+        // Create sprite material
+        const spriteMaterial = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true
+        });
+
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.set(position.x, position.y + 10, position.z);
+        sprite.scale.set(20, 10, 1);
+
+        return sprite;
+    }
+
     createPositionMarker(position, color, label) {
         // Create a glowing sphere marker
         const geometry = new THREE.SphereGeometry(3, 32, 32);
@@ -144,25 +174,54 @@ class CosmicVisualization {
         const glow = new THREE.Mesh(glowGeometry, glowMaterial);
         glow.position.set(position.x, position.y, position.z);
 
+        // Create text label
+        const colorHex = '#' + new THREE.Color(color).getHexString();
+        const textSprite = this.createTextLabel(label, position, colorHex);
+
         // Add pulsing animation data
         sphere.userData = { scale: 1, growing: true, label: label };
         glow.userData = { scale: 1, growing: true };
 
         this.scene.add(sphere);
         this.scene.add(glow);
+        this.scene.add(textSprite);
 
-        return { sphere, glow };
+        return { sphere, glow, label: textSprite };
     }
 
-    createJourneyPath(startPos, endPos) {
-        // Create a curved path from start to end
+    createJourneyPath(startPos, endPos, distanceKm) {
+        // Create a dramatic curved path showing cosmic journey
+        // The path should arc out into space to show the vast distance traveled
+
+        // Scale the journey based on actual distance traveled
+        const journeyScale = Math.log10(distanceKm) * 20; // Logarithmic scale for dramatic effect
+
         const curve = new THREE.CatmullRomCurve3([
+            // Start at current position
             new THREE.Vector3(startPos.x, startPos.y, startPos.z),
+
+            // First arc point - zoom out to show cosmic scale
+            new THREE.Vector3(
+                (startPos.x + endPos.x) / 2 + 30,
+                (startPos.y + endPos.y) / 2 + 30,
+                journeyScale * 0.5
+            ),
+
+            // Peak of journey - highest point showing vast cosmic distance
             new THREE.Vector3(
                 (startPos.x + endPos.x) / 2,
                 (startPos.y + endPos.y) / 2 + 50,
-                (startPos.z + endPos.z) / 2
+                journeyScale
             ),
+
+            // Second arc point - coming back down
+            new THREE.Vector3(
+                (startPos.x + endPos.x) / 2 - 30,
+                (startPos.y + endPos.y) / 2 - 30,
+                journeyScale * 0.5
+            ),
+
+            // End at birth position
             new THREE.Vector3(endPos.x, endPos.y, endPos.z)
         ]);
 
@@ -206,10 +265,12 @@ class CosmicVisualization {
         if (this.birthMarker) {
             this.scene.remove(this.birthMarker.sphere);
             this.scene.remove(this.birthMarker.glow);
+            if (this.birthMarker.label) this.scene.remove(this.birthMarker.label);
         }
         if (this.currentMarker) {
             this.scene.remove(this.currentMarker.sphere);
             this.scene.remove(this.currentMarker.glow);
+            if (this.currentMarker.label) this.scene.remove(this.currentMarker.label);
         }
 
         // Normalize coordinates to reasonable 3D space
@@ -231,12 +292,20 @@ class CosmicVisualization {
         this.birthMarker = this.createPositionMarker(birthPos, 0x00ff88, 'Birth');
         this.currentMarker = this.createPositionMarker(currentPos, 0xff0088, 'Current');
 
-        // Create journey path
-        this.journeyCurve = this.createJourneyPath(currentPos, birthPos);
+        // Get distance traveled for path scaling
+        const distanceKm = data.displacement.magnitude_km;
 
-        // Position camera at current location
-        this.camera.position.set(currentPos.x, currentPos.y, currentPos.z + 30);
-        this.camera.lookAt(currentPos.x, currentPos.y, currentPos.z);
+        // Create journey path
+        this.journeyCurve = this.createJourneyPath(currentPos, birthPos, distanceKm);
+
+        // Position camera to see the full journey
+        const midX = (currentPos.x + birthPos.x) / 2;
+        const midY = (currentPos.y + birthPos.y) / 2;
+        const journeyScale = Math.log10(distanceKm) * 20;
+
+        // Camera positioned to see both points and the arc
+        this.camera.position.set(midX + 50, midY - 100, journeyScale * 0.7);
+        this.camera.lookAt(midX, midY, journeyScale * 0.5);
     }
 
     playJourney() {
