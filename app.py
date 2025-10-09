@@ -214,6 +214,7 @@ def calculate_position():
                 'time_elapsed_seconds': float(displacement_data['time_elapsed_seconds']),
                 'time_elapsed_years': float(displacement_data['time_elapsed_years'])
             },
+            'cosmic_separation': displacement_data['cosmic_separation'],
             'spacecraft_comparisons': generate_spacecraft_comparisons(
                 displacement_data['displacement_magnitude_km']
             )

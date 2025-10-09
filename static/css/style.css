@@ -257,6 +257,52 @@ body {
     color: #aaa;
 }
 
+/* Cosmic Separation Section */
+.cosmic-separation-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.separation-explanation {
+    color: #ccc;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+}
+
+.separation-stat {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.separation-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.separation-label {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.separation-note {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #aaa;
+    line-height: 1.5;
+}
+
+.separation-note strong {
+    color: #667eea;
+}
+
 /* Results */
 .results-header {
     margin-bottom: 20px;

@@ -254,6 +254,15 @@ function showResults(data) {
         document.getElementById('light-years').textContent =
             data.displacement.magnitude_ly.toFixed(6);
 
+        // Update cosmic separation
+        console.log('Updating cosmic separation');
+        if (data.cosmic_separation) {
+            const sepKm = data.cosmic_separation.distance_km;
+            const sepLy = data.cosmic_separation.distance_ly;
+            document.getElementById('separation-distance').textContent =
+                `${formatLargeNumber(sepKm)} km (${sepLy.toFixed(6)} light-years)`;
+        }
+
         // Update spacecraft comparisons
         console.log('Updating spacecraft comparisons');
         displaySpacecraftComparisons(data.spacecraft_comparisons);

@@ -131,6 +131,31 @@ class SpaceTimePosition:
         displacement_magnitude_au = displacement_magnitude_km / 149597870.7
         displacement_magnitude_ly = displacement_magnitude_km / 9.461e12
 
+        # Calculate current cosmic separation
+        # This is the distance between where you were born (in cosmic space)
+        # and where you are now (in cosmic space) - they're both moving!
+
+        # Birth position in cosmic space has continued moving
+        # Calculate where birth position is NOW (not where it was at birth)
+        birth_position_now = self.calculator.calculate_position_change(
+            birth_velocities,
+            self.age_seconds
+        )
+
+        # Current position in cosmic space (relative to birth's starting point)
+        current_displacement = displacement
+
+        # The cosmic separation is the magnitude of difference
+        # (Both points have moved, but in same general direction)
+        # For simplicity, they're moving together with galactic/cosmic motion
+        # The separation is primarily from the displacement during your lifetime
+        cosmic_separation_km = displacement_magnitude_km
+
+        # However, if we want to show they're BOTH moving, we can show the
+        # separation velocity (how fast they're moving apart)
+        # This is approximately zero since both follow Earth/Solar/Galactic motion
+        separation_velocity_kms = 0  # They move together with cosmic flows
+
         return {
             'displacement_vector_km': displacement,
             'displacement_magnitude_km': displacement_magnitude_km,
@@ -139,7 +164,14 @@ class SpaceTimePosition:
             'time_elapsed_seconds': self.age_seconds,
             'time_elapsed_years': self.age_years,
             'birth_data': birth_data,
-            'current_data': current_data
+            'current_data': current_data,
+            'cosmic_separation': {
+                'distance_km': cosmic_separation_km,
+                'distance_au': displacement_magnitude_au,
+                'distance_ly': displacement_magnitude_ly,
+                'separation_velocity_kms': separation_velocity_kms,
+                'explanation': 'The distance between your birth position and current position in cosmic space. Both points move together with Earth/Solar/Galactic motion, so they maintain this separation.'
+            }
         }
 
     def generate_report(self):
