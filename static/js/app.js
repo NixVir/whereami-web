@@ -188,21 +188,39 @@ async function geocodeLocation(location) {
 }
 
 async function calculatePosition(data) {
-    const response = await fetch(`${API_BASE}/api/calculate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
+    console.log('Calculating position with data:', data);
+    console.log('API URL:', `${API_BASE}/api/calculate`);
 
-    const result = await response.json();
+    try {
+        const response = await fetch(`${API_BASE}/api/calculate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
 
-    if (!result.success) {
-        throw new Error(result.error || 'Calculation failed');
+        console.log('Calculate response status:', response.status);
+        console.log('Calculate response ok:', response.ok);
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Calculate response error body:', text);
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const result = await response.json();
+        console.log('Calculate result:', result);
+
+        if (!result.success) {
+            throw new Error(result.error || 'Calculation failed');
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Calculate error:', error);
+        throw error;
     }
-
-    return result;
 }
 
 function showResults(data) {
