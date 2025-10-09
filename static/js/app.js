@@ -80,11 +80,13 @@ function updateLocationFieldState() {
 }
 
 async function handleCalculate() {
+    console.log('Calculate button clicked');
     const errorDiv = document.getElementById('error-message');
     errorDiv.style.display = 'none';
 
     try {
         // Show loading
+        console.log('Showing loading screen');
         showLoading('Geocoding locations...');
 
         // Get form values
@@ -148,6 +150,9 @@ async function handleCalculate() {
 }
 
 async function geocodeLocation(location) {
+    console.log('Geocoding:', location);
+    console.log('API URL:', `${API_BASE}/api/geocode`);
+
     const response = await fetch(`${API_BASE}/api/geocode`, {
         method: 'POST',
         headers: {
@@ -156,7 +161,9 @@ async function geocodeLocation(location) {
         body: JSON.stringify({ location })
     });
 
+    console.log('Response status:', response.status);
     const data = await response.json();
+    console.log('Geocode result:', data);
 
     if (!data.success) {
         throw new Error(data.error || 'Geocoding failed');
