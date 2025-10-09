@@ -5,11 +5,6 @@ Provides REST endpoints for the web visualization
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
-import sys
-import os
-
-# Add parent directory to path to import our modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cosmic_calculator import CosmicMotionCalculator, MotionForcesCatalog
 from geocoding import LocationGeocoder
