@@ -321,7 +321,7 @@ function showResults(data) {
 
         // Update summary
         console.log('Updating summary');
-        const years = data.displacement.time_elapsed_years.toFixed(2);
+        const years = data.displacement.time_elapsed_years; // Keep as number
 
         let summaryText;
         if (data.event_name) {
@@ -340,7 +340,7 @@ function showResults(data) {
             formatLargeNumber(data.displacement.magnitude_km);
 
         document.getElementById('time-elapsed').textContent =
-            years;
+            formatTimeSpan(years);
 
         document.getElementById('current-velocity').textContent =
             data.current.velocities.total.magnitude.toFixed(2);
