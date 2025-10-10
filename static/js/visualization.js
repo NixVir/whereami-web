@@ -99,14 +99,14 @@ class CosmicVisualization {
     createCelestialLabels() {
         // Define prominent celestial objects with their approximate positions
         const celestialObjects = [
-            { name: 'Sirius', position: [-500, 300, -800], color: '#9BB0FF', info: 'Brightest star in night sky' },
-            { name: 'Betelgeuse', position: [800, -400, 600], color: '#FFB380', info: 'Red supergiant in Orion' },
+            { name: 'Sirius', position: [-500, 300, -800], color: '#9BB0FF', info: 'Brightest star' },
+            { name: 'Betelgeuse', position: [800, -400, 600], color: '#FFB380', info: 'Red supergiant' },
             { name: 'Polaris', position: [0, 1000, -200], color: '#FFF4EA', info: 'North Star' },
-            { name: 'Vega', position: [-700, 600, 400], color: '#FFFFFF', info: 'Brightest star in Lyra' },
-            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], color: '#E6E6FA', info: 'Nearest major galaxy' },
+            { name: 'Vega', position: [-700, 600, 400], color: '#FFFFFF', info: 'Star in Lyra' },
+            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], color: '#E6E6FA', info: '2.5 million light-years away' },
+            { name: 'Great Attractor', position: [-1200, -800, -1500], color: '#FF6347', info: 'Gravitational anomaly' },
             { name: 'Orion Nebula', position: [900, -300, 700], color: '#FF69B4', info: 'Stellar nursery' },
-            { name: 'Pleiades', position: [600, 400, -600], color: '#B0C4DE', info: 'Seven Sisters cluster' },
-            { name: 'Alpha Centauri', position: [-400, -500, 900], color: '#FFD700', info: 'Nearest star system' }
+            { name: 'Pleiades', position: [600, 400, -600], color: '#B0C4DE', info: 'Seven Sisters' }
         ];
 
         this.celestialLabels = [];
@@ -143,21 +143,21 @@ class CosmicVisualization {
             
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.set(obj.position[0], obj.position[1], obj.position[2]);
-            sprite.scale.set(15, 15, 1);
+            sprite.scale.set(40, 40, 1);  // Much larger markers
             
             this.scene.add(sprite);
             this.celestialLabels.push(sprite);
 
             // Create text label
             const labelCanvas = document.createElement('canvas');
-            labelCanvas.width = 512;
-            labelCanvas.height = 128;
+            labelCanvas.width = 1024;
+            labelCanvas.height = 256;
             const labelCtx = labelCanvas.getContext('2d');
             
             // Draw label background with rounded rectangle
             labelCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             labelCtx.beginPath();
-            const x = 10, y = 10, w = 492, h = 108, radius = 10;
+            const x = 20, y = 20, w = 984, h = 216, radius = 20;
             labelCtx.moveTo(x + radius, y);
             labelCtx.lineTo(x + w - radius, y);
             labelCtx.quadraticCurveTo(x + w, y, x + w, y + radius);
@@ -175,15 +175,15 @@ class CosmicVisualization {
             labelCtx.lineWidth = 3;
             labelCtx.stroke();
             
-            // Draw text
+            // Draw text - much larger
             labelCtx.fillStyle = obj.color;
-            labelCtx.font = 'Bold 36px Arial';
+            labelCtx.font = 'Bold 72px Arial';
             labelCtx.textAlign = 'center';
-            labelCtx.fillText(obj.name, 256, 52);
+            labelCtx.fillText(obj.name, 512, 104);
             
             labelCtx.fillStyle = '#AAA';
-            labelCtx.font = '24px Arial';
-            labelCtx.fillText(obj.info, 256, 88);
+            labelCtx.font = '48px Arial';
+            labelCtx.fillText(obj.info, 512, 176);
             
             const labelTexture = new THREE.CanvasTexture(labelCanvas);
             const labelMaterial = new THREE.SpriteMaterial({
@@ -192,8 +192,8 @@ class CosmicVisualization {
             });
             
             const labelSprite = new THREE.Sprite(labelMaterial);
-            labelSprite.position.set(obj.position[0], obj.position[1] + 30, obj.position[2]);
-            labelSprite.scale.set(80, 20, 1);
+            labelSprite.position.set(obj.position[0], obj.position[1] + 60, obj.position[2]);
+            labelSprite.scale.set(200, 50, 1);  // Much larger labels
             
             this.scene.add(labelSprite);
             this.celestialLabels.push(labelSprite);
@@ -515,6 +515,11 @@ class CosmicVisualization {
 
         this.isPlaying = true;
         this.journeyProgress = 0;
+        
+        // Disable controls during journey
+        if (this.controls) {
+            this.controls.enabled = false;
+        }
 
         const duration = 10000 / this.animationSpeed;
         const startTime = Date.now();
@@ -531,6 +536,11 @@ class CosmicVisualization {
             if (rawProgress >= 1) {
                 this.journeyProgress = 1;
                 this.isPlaying = false;
+                
+                // Re-enable controls when journey finishes
+                if (this.controls) {
+                    this.controls.enabled = true;
+                }
             }
 
             // Get position along curve
@@ -555,6 +565,11 @@ class CosmicVisualization {
 
     pauseJourney() {
         this.isPlaying = false;
+        
+        // Re-enable controls when paused
+        if (this.controls) {
+            this.controls.enabled = true;
+        }
     }
 
     restartJourney() {
