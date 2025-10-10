@@ -203,7 +203,12 @@ class CosmicVisualization {
 
     createJourneyPath(startPos, endPos, distanceKm) {
         // Create a path showing actual cosmic displacement
-        // Use direction vector to show true path through space
+        // Validate inputs to prevent NaN
+        if (isNaN(startPos.x) || isNaN(startPos.y) || isNaN(startPos.z) ||
+            isNaN(endPos.x) || isNaN(endPos.y) || isNaN(endPos.z)) {
+            console.error('Invalid position data for path creation');
+            return null;
+        }
 
         const dx = endPos.x - startPos.x;
         const dy = endPos.y - startPos.y;
@@ -286,9 +291,26 @@ class CosmicVisualization {
             this.scene.remove(this.currentMarker.glow);
             if (this.currentMarker.label) this.scene.remove(this.currentMarker.label);
         }
+        
+        // Remove old path
+        if (this.pathLine) {
+            this.scene.remove(this.pathLine);
+            this.pathLine.geometry.dispose();
+            this.pathLine.material.dispose();
+            this.pathLine = null;
+        }
+        if (this.pathTube) {
+            this.scene.remove(this.pathTube);
+            this.pathTube.geometry.dispose();
+            this.pathTube.material.dispose();
+            this.pathTube = null;
+        }
 
-        // Use actual displacement vectors for true 3D representation
-        const scale = 0.001; // Scale down the huge distances
+        console.log('Journey data displacement:', data.displacement);
+
+        // Use geographic coordinates with meaningful separation
+        const geoScale = 100;
+        const distanceScale = Math.log10(data.displacement.magnitude_km || 1) * 10;
 
         // Birth position at origin
         const birthPos = {
@@ -297,30 +319,15 @@ class CosmicVisualization {
             z: 0
         };
 
-        // Current position using actual displacement vector
-        // Check if vector_km exists, otherwise fall back to geographic mapping
-        let currentPos;
-        if (data.displacement.vector_km && 
-            Array.isArray(data.displacement.vector_km) &&
-            data.displacement.vector_km.length === 3 &&
-            !isNaN(data.displacement.vector_km[0]) &&
-            !isNaN(data.displacement.vector_km[1]) &&
-            !isNaN(data.displacement.vector_km[2])) {
-            currentPos = {
-                x: data.displacement.vector_km[0] * scale,
-                y: data.displacement.vector_km[1] * scale,
-                z: data.displacement.vector_km[2] * scale
-            };
-        } else {
-            // Fallback to geographic coordinates with Z offset based on distance
-            const geoScale = 100;
-            const distanceScale = Math.log10(data.displacement.magnitude_km) * 10;
-            currentPos = {
-                x: (data.current.location.longitude - data.birth.location.longitude) / 180 * geoScale,
-                y: (data.current.location.latitude - data.birth.location.latitude) / 90 * geoScale,
-                z: distanceScale
-            };
-        }
+        // Current position based on geographic difference plus distance traveled
+        const currentPos = {
+            x: (data.current.location.longitude - data.birth.location.longitude) / 180 * geoScale,
+            y: (data.current.location.latitude - data.birth.location.latitude) / 90 * geoScale,
+            z: distanceScale
+        };
+
+        console.log('Birth position:', birthPos);
+        console.log('Current position:', currentPos);
 
         // Create position markers
         this.birthMarker = this.createPositionMarker(birthPos, 0x00ff88, 'Birth');
@@ -452,7 +459,7 @@ class CosmicVisualization {
         });
 
         // Animate markers with pulsing effect
-        if (this.birthMarker) {
+        if (this.birthMarker && this.birthMarker.sphere) {
             const sphere = this.birthMarker.sphere;
             const glow = this.birthMarker.glow;
 
@@ -472,7 +479,7 @@ class CosmicVisualization {
             glow.scale.set(sphere.userData.scale, sphere.userData.scale, sphere.userData.scale);
         }
 
-        if (this.currentMarker) {
+        if (this.currentMarker && this.currentMarker.sphere) {
             const sphere = this.currentMarker.sphere;
             const glow = this.currentMarker.glow;
 
