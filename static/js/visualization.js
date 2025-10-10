@@ -29,6 +29,7 @@ class CosmicVisualization {
         this.stars = [];
         this.nebulae = [];
         this.lensFlares = [];
+        this.controls = null;
 
         this.init();
     }
@@ -42,6 +43,8 @@ class CosmicVisualization {
         const aspect = window.innerWidth / window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 100000);
         this.camera.position.set(0, 0, 50);
+        
+        // Note: OrbitControls will be added after renderer is created
 
         // Create renderer with transparent background
         this.renderer = new THREE.WebGLRenderer({ 
@@ -140,28 +143,25 @@ class CosmicVisualization {
             labelCanvas.height = 128;
             const labelCtx = labelCanvas.getContext('2d');
             
-            // Draw label background
-            labelCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            labelCtx.roundRect = function(x, y, w, h, r) {
-                this.beginPath();
-                this.moveTo(x + r, y);
-                this.lineTo(x + w - r, y);
-                this.quadraticCurveTo(x + w, y, x + w, y + r);
-                this.lineTo(x + w, y + h - r);
-                this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-                this.lineTo(x + r, y + h);
-                this.quadraticCurveTo(x, y + h, x, y + h - r);
-                this.lineTo(x, y + r);
-                this.quadraticCurveTo(x, y, x + r, y);
-                this.closePath();
-            };
-            labelCtx.roundRect(10, 10, 492, 108, 10);
+            // Draw label background with rounded rectangle
+            labelCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            labelCtx.beginPath();
+            const x = 10, y = 10, w = 492, h = 108, r = 10;
+            labelCtx.moveTo(x + r, y);
+            labelCtx.lineTo(x + w - r, y);
+            labelCtx.quadraticCurveTo(x + w, y, x + w, y + r);
+            labelCtx.lineTo(x + w, y + h - r);
+            labelCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            labelCtx.lineTo(x + r, y + h);
+            labelCtx.quadraticCurveTo(x, y + h, x, y + h - r);
+            labelCtx.lineTo(x, y + r);
+            labelCtx.quadraticCurveTo(x, y, x + r, y);
+            labelCtx.closePath();
             labelCtx.fill();
             
             // Draw border
             labelCtx.strokeStyle = obj.color;
-            labelCtx.lineWidth = 2;
-            labelCtx.roundRect(10, 10, 492, 108, 10);
+            labelCtx.lineWidth = 3;
             labelCtx.stroke();
             
             // Draw text
@@ -559,6 +559,11 @@ class CosmicVisualization {
         this.animationId = requestAnimationFrame(() => this.animate());
 
         const time = Date.now() * 0.001;
+
+        // Update controls
+        if (this.controls) {
+            this.controls.update();
+        }
 
         // Rotate particle systems slowly
         if (this.particles.earth) {
