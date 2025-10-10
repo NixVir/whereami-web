@@ -26,64 +26,29 @@
 
         <!-- Input Form -->
         <div id="input-panel" class="panel">
-            <h2>Enter Your Information</h2>
+            <h2>Your Cosmic Journey</h2>
+            <p class="form-description">Discover how far you've traveled through space since your birth</p>
 
             <div class="form-section">
-                <h3>Birth Information</h3>
                 <div class="form-group">
-                    <label for="birth-date">Birth Date</label>
+                    <label for="birth-date">When were you born?</label>
                     <input type="date" id="birth-date" required>
-                </div>
-                <div class="form-group">
-                    <label for="birth-time">Birth Time (optional)</label>
-                    <input type="time" id="birth-time" placeholder="12:00">
-                </div>
-                <div class="form-group">
-                    <label for="birth-timezone">Timezone</label>
-                    <select id="birth-timezone">
-                        <option value="UTC">UTC</option>
-                        <option value="Eastern">Eastern (ET)</option>
-                        <option value="Central">Central (CT)</option>
-                        <option value="Mountain">Mountain (MT)</option>
-                        <option value="Pacific">Pacific (PT)</option>
-                        <option value="America/New_York">America/New_York</option>
-                        <option value="America/Chicago">America/Chicago</option>
-                        <option value="America/Denver">America/Denver</option>
-                        <option value="America/Los_Angeles">America/Los_Angeles</option>
-                        <option value="Europe/London">Europe/London</option>
-                        <option value="Europe/Paris">Europe/Paris</option>
-                        <option value="Asia/Tokyo">Asia/Tokyo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="birth-location">Birth Location</label>
-                    <input type="text" id="birth-location" placeholder="Kansas City, MO, USA" required>
-                    <small>City, State, Country</small>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>Current Information</h3>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="use-current-time" checked>
-                    <label for="use-current-time">Use current date/time</label>
-                </div>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="same-location">
-                    <label for="same-location">Current location same as birth</label>
-                </div>
-                <div class="form-group">
-                    <label for="current-location">Current Location</label>
-                    <input type="text" id="current-location" placeholder="Boulder, CO, USA">
-                    <small>City, State, Country</small>
                 </div>
             </div>
 
             <button id="calculate-btn" class="primary-button">
-                Calculate My Cosmic Journey
+                Calculate My Journey
             </button>
 
             <div id="error-message" class="error-message" style="display: none;"></div>
+            
+            <!-- Hidden fields for defaults -->
+            <input type="hidden" id="birth-time" value="12:00">
+            <input type="hidden" id="birth-timezone" value="UTC">
+            <input type="hidden" id="birth-location" value="New York, NY, USA">
+            <input type="hidden" id="use-current-time" value="true">
+            <input type="hidden" id="same-location" value="true">
+            <input type="hidden" id="current-location" value="">
         </div>
 
         <!-- Results Panel -->

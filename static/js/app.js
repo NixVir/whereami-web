@@ -25,9 +25,6 @@ function initializeApp() {
 
     // Set up event listeners
     setupEventListeners();
-
-    // Check for same location checkbox
-    updateLocationFieldState();
 }
 
 function setupEventListeners() {
@@ -36,9 +33,6 @@ function setupEventListeners() {
 
     // Back button
     document.getElementById('back-btn').addEventListener('click', showInputPanel);
-
-    // Same location checkbox
-    document.getElementById('same-location').addEventListener('change', updateLocationFieldState);
 
     // Animation controls
     document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
@@ -65,43 +59,23 @@ function setupEventListeners() {
     });
 }
 
-function updateLocationFieldState() {
-    const sameLocation = document.getElementById('same-location').checked;
-    const currentLocationField = document.getElementById('current-location');
-
-    if (sameLocation) {
-        currentLocationField.disabled = true;
-        currentLocationField.value = '';
-        currentLocationField.placeholder = 'Same as birth location';
-    } else {
-        currentLocationField.disabled = false;
-        currentLocationField.placeholder = 'Boulder, CO, USA';
-    }
-}
-
 async function handleCalculate() {
     console.log('Calculate button clicked');
     const errorDiv = document.getElementById('error-message');
     errorDiv.style.display = 'none';
 
     try {
-        // Get form values first for validation
+        // Get form values (most are defaults now)
         const birthDate = document.getElementById('birth-date').value;
         const birthTime = document.getElementById('birth-time').value || '12:00';
-        const birthTimezone = document.getElementById('birth-timezone').value;
-        const birthLocation = document.getElementById('birth-location').value;
-        const sameLocation = document.getElementById('same-location').checked;
-        const currentLocation = sameLocation ? birthLocation : document.getElementById('current-location').value;
+        const birthTimezone = document.getElementById('birth-timezone').value || 'UTC';
+        const birthLocation = document.getElementById('birth-location').value || 'New York, NY, USA';
+        const sameLocation = true; // Always use same location
+        const currentLocation = birthLocation;
 
         // Validate inputs before showing loading screen
         if (!birthDate) {
             throw new Error('Please enter your birth date');
-        }
-        if (!birthLocation) {
-            throw new Error('Please enter your birth location');
-        }
-        if (!sameLocation && !currentLocation) {
-            throw new Error('Please enter your current location or check "Current location same as birth"');
         }
 
         // Show loading only after validation passes

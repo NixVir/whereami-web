@@ -90,6 +90,15 @@ body {
     font-weight: 300;
 }
 
+.form-description {
+    text-align: center;
+    color: #aaa;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+
 /* Panels */
 .panel {
     position: absolute;
