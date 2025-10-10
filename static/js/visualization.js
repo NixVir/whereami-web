@@ -208,20 +208,21 @@ class CosmicVisualization {
     }
 
     createParticleSystems() {
+        // Reduced particle counts for better performance (40% reduction)
         // Earth-scale particles (nearby stars)
-        this.particles.earth = this.createParticleField(1000, 100, 0x88ccff, 0.5);
+        this.particles.earth = this.createParticleField(600, 100, 0x88ccff, 0.5);
         this.scene.add(this.particles.earth);
 
         // Solar system scale (farther stars)
-        this.particles.solar = this.createParticleField(3000, 500, 0x6699cc, 0.3);
+        this.particles.solar = this.createParticleField(1500, 500, 0x6699cc, 0.3);
         this.scene.add(this.particles.solar);
 
         // Galactic scale (distant stars)
-        this.particles.galactic = this.createParticleField(5000, 2000, 0x4466aa, 0.2);
+        this.particles.galactic = this.createParticleField(2000, 2000, 0x4466aa, 0.2);
         this.scene.add(this.particles.galactic);
 
-        // Cosmic scale (very distant objects)
-        this.particles.cosmic = this.createParticleField(10000, 5000, 0x223388, 0.1);
+        // Cosmic scale (very distant objects) - reduced significantly
+        this.particles.cosmic = this.createParticleField(3000, 5000, 0x223388, 0.1);
         this.scene.add(this.particles.cosmic);
     }
 
@@ -801,7 +802,37 @@ class CosmicVisualization {
             { color: 0xFF6666, size: 1.5, count: 400 }
         ];
 
+        // Cache textures for each star type to avoid recreating them
+        const textureCache = new Map();
+
         starTypes.forEach(starType => {
+            // Create texture once per star type
+            if (!textureCache.has(starType.color)) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                const col = new THREE.Color(starType.color);
+                const r = Math.floor(col.r * 255);
+                const g = Math.floor(col.g * 255);
+                const b = Math.floor(col.b * 255);
+
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(0.1, 'rgba(' + r + ',' + g + ',' + b + ', 1)');
+                gradient.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ', 0.6)');
+                gradient.addColorStop(0.7, 'rgba(' + r + ',' + g + ',' + b + ', 0.2)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 64, 64);
+
+                textureCache.set(starType.color, new THREE.CanvasTexture(canvas));
+            }
+
+            const texture = textureCache.get(starType.color);
+
             for (let i = 0; i < starType.count; i++) {
                 const distance = 1000 + Math.random() * 10000;
                 const theta = Math.random() * Math.PI * 2;
@@ -811,36 +842,14 @@ class CosmicVisualization {
                 const z = distance * Math.cos(phi);
                 const size = starType.size * (0.5 + Math.random() * 1.5);
                 const brightness = 0.3 + Math.random() * 0.7;
-                
-                // Create sprite texture for smooth circular stars
-                const canvas = document.createElement('canvas');
-                canvas.width = 64;
-                canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                
-                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-                const col = new THREE.Color(starType.color);
-                const r = Math.floor(col.r * 255);
-                const g = Math.floor(col.g * 255);
-                const b = Math.floor(col.b * 255);
-                
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-                gradient.addColorStop(0.1, 'rgba(' + r + ',' + g + ',' + b + ', 1)');
-                gradient.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ', 0.6)');
-                gradient.addColorStop(0.7, 'rgba(' + r + ',' + g + ',' + b + ', 0.2)');
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 64, 64);
-                
-                const texture = new THREE.CanvasTexture(canvas);
+
                 const spriteMaterial = new THREE.SpriteMaterial({
                     map: texture,
                     transparent: true,
                     opacity: 1,
                     blending: THREE.AdditiveBlending
                 });
-                
+
                 const star = new THREE.Sprite(spriteMaterial);
                 star.position.set(x, y, z);
                 star.scale.set(size * 6, size * 6, 1);
@@ -849,10 +858,10 @@ class CosmicVisualization {
                     twinkleSpeed: 0.5 + Math.random() * 2,
                     twinklePhase: Math.random() * Math.PI * 2
                 };
-                
+
                 this.stars.push(star);
                 this.scene.add(star);
-                
+
                 if (brightness > 0.7 && Math.random() > 0.7) {
                     this.createLensFlare(star.position, starType.color, brightness);
                 }

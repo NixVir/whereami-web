@@ -12,29 +12,6 @@ body {
     overflow: hidden;
 }
 
-
-/* Milky Way glow effect */
-#visualization-container::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -10%;
-    width: 120%;
-    height: 200%;
-    background: linear-gradient(
-        135deg,
-        transparent 0%,
-        rgba(100, 80, 150, 0.1) 25%,
-        rgba(80, 60, 120, 0.15) 50%,
-        rgba(100, 80, 150, 0.1) 75%,
-        transparent 100%
-    );
-    transform: rotate(-25deg);
-    pointer-events: none;
-    z-index: 1;
-}
-
-
 /* Visualization Container */
 #visualization-container {
     position: fixed;
