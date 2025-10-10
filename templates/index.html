@@ -152,10 +152,10 @@
 
     <!-- Three.js and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@23.1.1/dist/tween.umd.js"></script>
 
     <!-- Our application scripts -->
+    <script src="{{ url_for('static', filename='js/orbit-controls.js') }}"></script>
     <script src="{{ url_for('static', filename='js/starfield.js') }}"></script>
     <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

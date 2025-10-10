@@ -59,20 +59,17 @@ class CosmicVisualization {
         this.renderer.toneMappingExposure = 1.5;
         this.container.appendChild(this.renderer.domElement);
 
-        // Add OrbitControls for camera interaction
-        console.log('THREE.OrbitControls available?', typeof THREE.OrbitControls);
-        if (typeof THREE.OrbitControls !== 'undefined') {
-            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        // Add SimpleOrbitControls for camera interaction
+        if (typeof SimpleOrbitControls !== 'undefined') {
+            this.controls = new SimpleOrbitControls(this.camera, this.renderer.domElement);
             this.controls.enableDamping = true;
             this.controls.dampingFactor = 0.05;
-            this.controls.screenSpacePanning = false;
             this.controls.minDistance = 10;
             this.controls.maxDistance = 5000;
-            this.controls.maxPolarAngle = Math.PI;
             this.controls.enabled = true;
-            console.log('OrbitControls initialized:', this.controls);
+            console.log('Camera controls initialized - you can now pan/rotate/zoom!');
         } else {
-            console.error('OrbitControls not available! Check if script is loaded.');
+            console.error('SimpleOrbitControls not loaded!');
         }
 
         // Add ambient light
