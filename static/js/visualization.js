@@ -298,11 +298,29 @@ class CosmicVisualization {
         };
 
         // Current position using actual displacement vector
-        const currentPos = {
-            x: data.displacement.vector_km.x * scale,
-            y: data.displacement.vector_km.y * scale,
-            z: data.displacement.vector_km.z * scale
-        };
+        // Check if vector_km exists, otherwise fall back to geographic mapping
+        let currentPos;
+        if (data.displacement.vector_km && 
+            Array.isArray(data.displacement.vector_km) &&
+            data.displacement.vector_km.length === 3 &&
+            !isNaN(data.displacement.vector_km[0]) &&
+            !isNaN(data.displacement.vector_km[1]) &&
+            !isNaN(data.displacement.vector_km[2])) {
+            currentPos = {
+                x: data.displacement.vector_km[0] * scale,
+                y: data.displacement.vector_km[1] * scale,
+                z: data.displacement.vector_km[2] * scale
+            };
+        } else {
+            // Fallback to geographic coordinates with Z offset based on distance
+            const geoScale = 100;
+            const distanceScale = Math.log10(data.displacement.magnitude_km) * 10;
+            currentPos = {
+                x: (data.current.location.longitude - data.birth.location.longitude) / 180 * geoScale,
+                y: (data.current.location.latitude - data.birth.location.latitude) / 90 * geoScale,
+                z: distanceScale
+            };
+        }
 
         // Create position markers
         this.birthMarker = this.createPositionMarker(birthPos, 0x00ff88, 'Birth');
