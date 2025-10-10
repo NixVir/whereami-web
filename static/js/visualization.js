@@ -43,10 +43,15 @@ class CosmicVisualization {
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 100000);
         this.camera.position.set(0, 0, 50);
 
-        // Create renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        // Create renderer with transparent background
+        this.renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            premultipliedAlpha: false
+        });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setClearColor(0x000000, 0);
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.5;
         this.container.appendChild(this.renderer.domElement);
@@ -122,13 +127,32 @@ class CosmicVisualization {
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
+        // Create circular sprite texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw circular gradient
+        const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+        gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 32, 32);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        
         const material = new THREE.PointsMaterial({
             size: 2,
+            map: texture,
             vertexColors: true,
             transparent: true,
             opacity: opacity,
             sizeAttenuation: true,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
 
         return new THREE.Points(geometry, material);
@@ -444,7 +468,8 @@ class CosmicVisualization {
         // Animate stars with twinkling effect
         this.stars.forEach(star => {
             const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinklePhase);
-            star.material.opacity = star.userData.baseOpacity + twinkle * 0.2;
+            const targetOpacity = star.userData.baseOpacity * (0.7 + twinkle * 0.3);
+            star.material.opacity = targetOpacity;
         });
 
         // Rotate nebulae slowly
@@ -576,15 +601,38 @@ class CosmicVisualization {
                 const size = starType.size * (0.5 + Math.random() * 1.5);
                 const brightness = 0.3 + Math.random() * 0.7;
                 
-                const geometry = new THREE.SphereGeometry(size, 8, 8);
-                const material = new THREE.MeshBasicMaterial({
-                    color: starType.color,
+                // Create sprite texture for smooth circular stars
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                
+                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                const col = new THREE.Color(starType.color);
+                const r = Math.floor(col.r * 255);
+                const g = Math.floor(col.g * 255);
+                const b = Math.floor(col.b * 255);
+                
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(0.1, 'rgba(' + r + ',' + g + ',' + b + ', 1)');
+                gradient.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ', 0.6)');
+                gradient.addColorStop(0.7, 'rgba(' + r + ',' + g + ',' + b + ', 0.2)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 64, 64);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({
+                    map: texture,
                     transparent: true,
-                    opacity: brightness
+                    opacity: 1,
+                    blending: THREE.AdditiveBlending
                 });
                 
-                const star = new THREE.Mesh(geometry, material);
+                const star = new THREE.Sprite(spriteMaterial);
                 star.position.set(x, y, z);
+                star.scale.set(size * 6, size * 6, 1);
                 star.userData = {
                     baseOpacity: brightness,
                     twinkleSpeed: 0.5 + Math.random() * 2,
