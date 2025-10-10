@@ -85,11 +85,7 @@ async function handleCalculate() {
     errorDiv.style.display = 'none';
 
     try {
-        // Show loading
-        console.log('Showing loading screen');
-        showLoading('Geocoding locations...');
-
-        // Get form values
+        // Get form values first for validation
         const birthDate = document.getElementById('birth-date').value;
         const birthTime = document.getElementById('birth-time').value || '12:00';
         const birthTimezone = document.getElementById('birth-timezone').value;
@@ -97,10 +93,20 @@ async function handleCalculate() {
         const sameLocation = document.getElementById('same-location').checked;
         const currentLocation = sameLocation ? birthLocation : document.getElementById('current-location').value;
 
-        // Validate inputs
-        if (!birthDate || !birthLocation || (!sameLocation && !currentLocation)) {
-            throw new Error('Please fill in all required fields');
+        // Validate inputs before showing loading screen
+        if (!birthDate) {
+            throw new Error('Please enter your birth date');
         }
+        if (!birthLocation) {
+            throw new Error('Please enter your birth location');
+        }
+        if (!sameLocation && !currentLocation) {
+            throw new Error('Please enter your current location or check "Current location same as birth"');
+        }
+
+        // Show loading only after validation passes
+        console.log('Showing loading screen');
+        showLoading('Geocoding locations...');
 
         // Geocode birth location
         updateLoadingStatus('Geocoding birth location...');
