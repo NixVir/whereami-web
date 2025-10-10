@@ -25,13 +25,18 @@ class CosmicVisualization {
         this.journeyData = null;
         this.pathLine = null;
 
+        // Realistic elements
+        this.stars = [];
+        this.nebulae = [];
+        this.lensFlares = [];
+
         this.init();
     }
 
     init() {
         // Create scene
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2(0x000000, 0.0003);
+        this.scene.fog = new THREE.FogExp2(0x000011, 0.00015);
 
         // Create camera
         const aspect = window.innerWidth / window.innerHeight;
@@ -42,6 +47,8 @@ class CosmicVisualization {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.5;
         this.container.appendChild(this.renderer.domElement);
 
         // Add ambient light
@@ -55,6 +62,11 @@ class CosmicVisualization {
 
         // Create initial particle systems
         this.createParticleSystems();
+
+        // Create realistic space environment
+        this.createMilkyWayBackground();
+        this.createRealisticStarField();
+        this.createNebulae();
 
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
@@ -308,20 +320,31 @@ class CosmicVisualization {
         this.camera.lookAt(midX, midY, journeyScale * 0.5);
     }
 
+
+    // Easing function for smooth camera movement
+    easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
     playJourney() {
         if (!this.journeyData || !this.journeyCurve) return;
 
         this.isPlaying = true;
         this.journeyProgress = 0;
 
-        const duration = 10000 / this.animationSpeed; // 10 seconds base
+        const duration = 10000 / this.animationSpeed;
+        const startTime = Date.now();
 
         const animate = (time) => {
             if (!this.isPlaying) return;
 
-            this.journeyProgress += (16 * this.animationSpeed) / duration;
+            const elapsed = Date.now() - startTime;
+            const rawProgress = Math.min(elapsed / duration, 1);
 
-            if (this.journeyProgress >= 1) {
+            // Apply easing for smooth acceleration/deceleration
+            this.journeyProgress = this.easeInOutCubic(rawProgress);
+
+            if (rawProgress >= 1) {
                 this.journeyProgress = 1;
                 this.isPlaying = false;
             }
@@ -330,11 +353,12 @@ class CosmicVisualization {
             const point = this.journeyCurve.getPoint(this.journeyProgress);
             const tangent = this.journeyCurve.getTangent(this.journeyProgress);
 
-            // Update camera position and orientation
+            // Smooth camera movement with slight offset
             this.camera.position.copy(point);
             this.camera.position.z += 30;
+            this.camera.position.y += 10;
 
-            const lookAt = point.clone().add(tangent);
+            const lookAt = point.clone().add(tangent.multiplyScalar(50));
             this.camera.lookAt(lookAt);
 
             if (this.isPlaying) {
@@ -361,6 +385,8 @@ class CosmicVisualization {
     animate() {
         this.animationId = requestAnimationFrame(() => this.animate());
 
+        const time = Date.now() * 0.001;
+
         // Rotate particle systems slowly
         if (this.particles.earth) {
             this.particles.earth.rotation.y += 0.0002;
@@ -374,6 +400,23 @@ class CosmicVisualization {
         if (this.particles.cosmic) {
             this.particles.cosmic.rotation.y += 0.00002;
         }
+
+        // Animate stars with twinkling effect
+        this.stars.forEach(star => {
+            const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinklePhase);
+            star.material.opacity = star.userData.baseOpacity + twinkle * 0.2;
+        });
+
+        // Rotate nebulae slowly
+        this.nebulae.forEach(nebula => {
+            nebula.rotation.y += nebula.userData.rotationSpeed;
+            nebula.rotation.x += nebula.userData.rotationSpeed * 0.5;
+        });
+
+        // Update lens flares to face camera
+        this.lensFlares.forEach(flare => {
+            flare.lookAt(this.camera.position);
+        });
 
         // Animate markers with pulsing effect
         if (this.birthMarker) {
@@ -433,7 +476,167 @@ class CosmicVisualization {
             this.renderer.dispose();
         }
     }
+
+    createMilkyWayBackground() {
+        const geometry = new THREE.SphereGeometry(50000, 64, 64);
+        const canvas = document.createElement('canvas');
+        canvas.width = 2048;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 1024);
+        gradient.addColorStop(0, '#000308');
+        gradient.addColorStop(0.4, '#00010a');
+        gradient.addColorStop(0.5, '#1a0f2e');
+        gradient.addColorStop(0.6, '#00010a');
+        gradient.addColorStop(1, '#000308');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 2048, 1024);
+        
+        for (let i = 0; i < 5000; i++) {
+            const x = Math.random() * 2048;
+            const y = Math.random() * 1024;
+            const radius = Math.random() * 1.5;
+            const brightness = Math.random();
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + brightness + ')';
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.BackSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const skybox = new THREE.Mesh(geometry, material);
+        this.scene.add(skybox);
+    }
+
+    createRealisticStarField() {
+        const starTypes = [
+            { color: 0x9BB0FF, size: 3, count: 200 },
+            { color: 0xFFFFFF, size: 2.5, count: 500 },
+            { color: 0xFFFF00, size: 2, count: 800 },
+            { color: 0xFFCC66, size: 1.8, count: 600 },
+            { color: 0xFF6666, size: 1.5, count: 400 }
+        ];
+
+        starTypes.forEach(starType => {
+            for (let i = 0; i < starType.count; i++) {
+                const distance = 1000 + Math.random() * 10000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const x = distance * Math.sin(phi) * Math.cos(theta);
+                const y = distance * Math.sin(phi) * Math.sin(theta);
+                const z = distance * Math.cos(phi);
+                const size = starType.size * (0.5 + Math.random() * 1.5);
+                const brightness = 0.3 + Math.random() * 0.7;
+                
+                const geometry = new THREE.SphereGeometry(size, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: starType.color,
+                    transparent: true,
+                    opacity: brightness
+                });
+                
+                const star = new THREE.Mesh(geometry, material);
+                star.position.set(x, y, z);
+                star.userData = {
+                    baseOpacity: brightness,
+                    twinkleSpeed: 0.5 + Math.random() * 2,
+                    twinklePhase: Math.random() * Math.PI * 2
+                };
+                
+                this.stars.push(star);
+                this.scene.add(star);
+                
+                if (brightness > 0.7 && Math.random() > 0.7) {
+                    this.createLensFlare(star.position, starType.color, brightness);
+                }
+            }
+        });
+    }
+
+    createLensFlare(position, color, intensity) {
+        const flareGeometry = new THREE.CircleGeometry(5, 32);
+        const flareMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: intensity * 0.3,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        
+        const flare = new THREE.Mesh(flareGeometry, flareMaterial);
+        flare.position.copy(position);
+        this.lensFlares.push(flare);
+        this.scene.add(flare);
+    }
+
+    createNebulae() {
+        const nebulaColors = [
+            { color: 0xFF1493 },
+            { color: 0x00CED1 },
+            { color: 0x9370DB },
+            { color: 0xFF4500 }
+        ];
+
+        for (let i = 0; i < 8; i++) {
+            const nebulaType = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
+            const distance = 5000 + Math.random() * 20000;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const x = distance * Math.sin(phi) * Math.cos(theta);
+            const y = distance * Math.sin(phi) * Math.sin(theta);
+            const z = distance * Math.cos(phi);
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            for (let j = 0; j < 1000; j++) {
+                const radius = 500 + Math.random() * 1000;
+                const angle1 = Math.random() * Math.PI * 2;
+                const angle2 = Math.random() * Math.PI * 2;
+                const px = x + Math.cos(angle1) * Math.sin(angle2) * radius;
+                const py = y + Math.sin(angle1) * Math.sin(angle2) * radius;
+                const pz = z + Math.cos(angle2) * radius;
+                positions.push(px, py, pz);
+                
+                const col = new THREE.Color(nebulaType.color);
+                col.r += (Math.random() - 0.5) * 0.3;
+                col.g += (Math.random() - 0.5) * 0.3;
+                col.b += (Math.random() - 0.5) * 0.3;
+                colors.push(col.r, col.g, col.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 20,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.15,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const nebula = new THREE.Points(geometry, material);
+            nebula.userData = { rotationSpeed: (Math.random() - 0.5) * 0.0001 };
+            this.nebulae.push(nebula);
+            this.scene.add(nebula);
+        }
+    }
+
 }
+
+
 
 // Export for use in app.js
 window.CosmicVisualization = CosmicVisualization;
