@@ -67,9 +67,14 @@ class CosmicVisualization {
             this.controls.minDistance = 10;
             this.controls.maxDistance = 5000;
             this.controls.enabled = true;
-            console.log('Camera controls initialized - you can now pan/rotate/zoom!');
+            console.log('✅ Camera controls initialized!');
+            console.log('📌 Controls enabled:', this.controls.enabled);
+            console.log('🖱️ Left drag = rotate, Right drag = pan, Scroll = zoom');
+            
+            // Add visual indicator
+            this.addControlsIndicator();
         } else {
-            console.error('SimpleOrbitControls not loaded!');
+            console.error('❌ SimpleOrbitControls not loaded!');
         }
 
         // Add ambient light
@@ -673,6 +678,33 @@ class CosmicVisualization {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+
+    addControlsIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'controls-indicator';
+        indicator.innerHTML = `
+            <div style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; font-family: Arial; z-index: 1000; border: 2px solid #667eea;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #667eea;">🎮 Camera Controls Active</div>
+                <div style="font-size: 12px; line-height: 1.6;">
+                    🖱️ <strong>Left Drag</strong>: Rotate<br>
+                    🖱️ <strong>Right Drag</strong>: Pan<br>
+                    🖱️ <strong>Scroll</strong>: Zoom
+                </div>
+            </div>
+        `;
+        document.body.appendChild(indicator);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            const elem = document.getElementById('controls-indicator');
+            if (elem) {
+                elem.style.transition = 'opacity 1s';
+                elem.style.opacity = '0';
+                setTimeout(() => elem.remove(), 1000);
+            }
+        }, 5000);
     }
 
     dispose() {
