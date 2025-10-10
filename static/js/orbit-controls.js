@@ -50,14 +50,17 @@ class SimpleOrbitControls {
     onMouseDown(event) {
         if (!this.enabled) return;
 
+        console.log('🖱️ Mouse down detected!', event.button === 0 ? 'LEFT' : event.button === 2 ? 'RIGHT' : 'OTHER');
         event.preventDefault();
 
         if (event.button === this.mouseButtons.LEFT) {
             this.state = 'ROTATE';
             this.rotateStart.set(event.clientX, event.clientY);
+            console.log('🔄 Rotate mode activated');
         } else if (event.button === this.mouseButtons.RIGHT) {
             this.state = 'PAN';
             this.panStart.set(event.clientX, event.clientY);
+            console.log('👆 Pan mode activated');
         }
 
         this.domElement.addEventListener('mousemove', this.onMouseMove);
@@ -100,6 +103,7 @@ class SimpleOrbitControls {
     onMouseWheel(event) {
         if (!this.enabled) return;
 
+        console.log('🔍 Scroll detected:', event.deltaY < 0 ? 'Zoom IN' : 'Zoom OUT');
         event.preventDefault();
         event.stopPropagation();
 

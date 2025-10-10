@@ -707,6 +707,43 @@ class CosmicVisualization {
         }, 5000);
     }
 
+
+    resetCamera() {
+        if (!this.journeyData) return;
+        
+        // Reset to the default view showing the journey
+        const data = this.journeyData;
+        const birthPos = { x: 0, y: 0, z: 0 };
+        const currentPos = {
+            x: (data.current.location.longitude - data.birth.location.longitude) / 180 * 100,
+            y: (data.current.location.latitude - data.birth.location.latitude) / 90 * 100,
+            z: Math.log10(data.displacement.magnitude_km || 1) * 10
+        };
+        
+        const midX = (currentPos.x + birthPos.x) / 2;
+        const midY = (currentPos.y + birthPos.y) / 2;
+        const midZ = (currentPos.z + birthPos.z) / 2;
+        
+        const distance = Math.sqrt(
+            Math.pow(currentPos.x - birthPos.x, 2) +
+            Math.pow(currentPos.y - birthPos.y, 2) +
+            Math.pow(currentPos.z - birthPos.z, 2)
+        );
+        
+        this.camera.position.set(
+            midX + distance * 0.5,
+            midY + distance * 0.3,
+            midZ + distance * 0.8
+        );
+        this.camera.lookAt(midX, midY, midZ);
+        
+        if (this.controls) {
+            this.controls.target.set(midX, midY, midZ);
+        }
+        
+        console.log('📷 Camera reset to default view');
+    }
+
     dispose() {
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
@@ -899,6 +936,13 @@ class CosmicVisualization {
 }
 
 
+
+// Make resetCamera accessible globally
+window.resetVisualizationCamera = function() {
+    if (window.visualization) {
+        window.visualization.resetCamera();
+    }
+};
 
 // Export for use in app.js
 window.CosmicVisualization = CosmicVisualization;

@@ -37,6 +37,7 @@ function setupEventListeners() {
     // Animation controls
     document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
     document.getElementById('restart-btn').addEventListener('click', restartAnimation);
+    document.getElementById('reset-camera-btn').addEventListener('click', resetCamera);
     document.getElementById('speed-slider').addEventListener('input', updateSpeed);
 
     // Show details button
@@ -402,6 +403,13 @@ function showError(message) {
     const errorDiv = document.getElementById('error-message');
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
+}
+
+
+function resetCamera() {
+    if (window.resetVisualizationCamera) {
+        window.resetVisualizationCamera();
+    }
 }
 
 function formatLargeNumber(num) {
