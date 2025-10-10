@@ -202,38 +202,40 @@ class CosmicVisualization {
     }
 
     createJourneyPath(startPos, endPos, distanceKm) {
-        // Create a dramatic curved path showing cosmic journey
-        // The path should arc out into space to show the vast distance traveled
+        // Create a path showing actual cosmic displacement
+        // Use direction vector to show true path through space
 
-        // Scale the journey based on actual distance traveled
-        const journeyScale = Math.log10(distanceKm) * 20; // Logarithmic scale for dramatic effect
-
+        const dx = endPos.x - startPos.x;
+        const dy = endPos.y - startPos.y;
+        const dz = endPos.z - startPos.z;
+        
+        // Create waypoints along the actual trajectory
         const curve = new THREE.CatmullRomCurve3([
-            // Start at current position
+            // Start at birth position
             new THREE.Vector3(startPos.x, startPos.y, startPos.z),
 
-            // First arc point - zoom out to show cosmic scale
+            // 25% of the way
             new THREE.Vector3(
-                (startPos.x + endPos.x) / 2 + 30,
-                (startPos.y + endPos.y) / 2 + 30,
-                journeyScale * 0.5
+                startPos.x + dx * 0.25,
+                startPos.y + dy * 0.25,
+                startPos.z + dz * 0.25
             ),
 
-            // Peak of journey - highest point showing vast cosmic distance
+            // 50% of the way
             new THREE.Vector3(
-                (startPos.x + endPos.x) / 2,
-                (startPos.y + endPos.y) / 2 + 50,
-                journeyScale
+                startPos.x + dx * 0.5,
+                startPos.y + dy * 0.5,
+                startPos.z + dz * 0.5
             ),
 
-            // Second arc point - coming back down
+            // 75% of the way
             new THREE.Vector3(
-                (startPos.x + endPos.x) / 2 - 30,
-                (startPos.y + endPos.y) / 2 - 30,
-                journeyScale * 0.5
+                startPos.x + dx * 0.75,
+                startPos.y + dy * 0.75,
+                startPos.z + dz * 0.75
             ),
 
-            // End at birth position
+            // End at current position
             new THREE.Vector3(endPos.x, endPos.y, endPos.z)
         ]);
 
@@ -285,19 +287,21 @@ class CosmicVisualization {
             if (this.currentMarker.label) this.scene.remove(this.currentMarker.label);
         }
 
-        // Normalize coordinates to reasonable 3D space
-        const scale = 100;
+        // Use actual displacement vectors for true 3D representation
+        const scale = 0.001; // Scale down the huge distances
 
+        // Birth position at origin
         const birthPos = {
-            x: (data.birth.location.longitude / 180) * scale,
-            y: (data.birth.location.latitude / 90) * scale,
+            x: 0,
+            y: 0,
             z: 0
         };
 
+        // Current position using actual displacement vector
         const currentPos = {
-            x: (data.current.location.longitude / 180) * scale,
-            y: (data.current.location.latitude / 90) * scale,
-            z: 0
+            x: data.displacement.vector_km.x * scale,
+            y: data.displacement.vector_km.y * scale,
+            z: data.displacement.vector_km.z * scale
         };
 
         // Create position markers
@@ -313,11 +317,22 @@ class CosmicVisualization {
         // Position camera to see the full journey
         const midX = (currentPos.x + birthPos.x) / 2;
         const midY = (currentPos.y + birthPos.y) / 2;
-        const journeyScale = Math.log10(distanceKm) * 20;
+        const midZ = (currentPos.z + birthPos.z) / 2;
+        
+        // Calculate distance for camera placement
+        const distance = Math.sqrt(
+            Math.pow(currentPos.x - birthPos.x, 2) +
+            Math.pow(currentPos.y - birthPos.y, 2) +
+            Math.pow(currentPos.z - birthPos.z, 2)
+        );
 
-        // Camera positioned to see both points and the arc
-        this.camera.position.set(midX + 50, midY - 100, journeyScale * 0.7);
-        this.camera.lookAt(midX, midY, journeyScale * 0.5);
+        // Camera positioned to see the full path from an angle
+        this.camera.position.set(
+            midX + distance * 0.5,
+            midY + distance * 0.3,
+            midZ + distance * 0.8
+        );
+        this.camera.lookAt(midX, midY, midZ);
     }
 
 
