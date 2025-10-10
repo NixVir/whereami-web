@@ -34,9 +34,10 @@ body {
     border: 2px solid #667eea;
     color: #fff;
     font-family: Arial, sans-serif;
-    z-index: 100;
+    z-index: 1001;
     max-width: 300px;
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    pointer-events: none;
 }
 
 #frame-reference-indicator strong {

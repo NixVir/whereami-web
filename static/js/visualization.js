@@ -526,7 +526,14 @@ class CosmicVisualization {
     }
 
     updateCelestialObjectColors(timeElapsedYears) {
-        if (!this.celestialObjects || !this.celestialLabels) return;
+        if (!this.celestialObjects || !this.celestialLabels) {
+            console.log('⚠️ Cannot update celestial colors - objects or labels missing');
+            console.log('celestialObjects:', this.celestialObjects);
+            console.log('celestialLabels:', this.celestialLabels);
+            return;
+        }
+
+        console.log('🎨 Updating celestial object colors for', timeElapsedYears, 'years');
 
         // Camera position (represents "us")
         const ourPosition = new THREE.Vector3(0, 0, 0);
