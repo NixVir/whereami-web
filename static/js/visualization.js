@@ -182,15 +182,15 @@ class CosmicVisualization {
         });
 
         const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.position.set(position.x, position.y + 10, position.z);
-        sprite.scale.set(20, 10, 1);
+        sprite.position.set(position.x, position.y + 5, position.z);
+        sprite.scale.set(10, 5, 1);
 
         return sprite;
     }
 
     createPositionMarker(position, color, label) {
-        // Create a glowing sphere marker
-        const geometry = new THREE.SphereGeometry(3, 32, 32);
+        // Create a glowing sphere marker (smaller size)
+        const geometry = new THREE.SphereGeometry(1.5, 32, 32);
         const material = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
@@ -200,7 +200,7 @@ class CosmicVisualization {
         sphere.position.set(position.x, position.y, position.z);
 
         // Add a glow effect with a larger transparent sphere
-        const glowGeometry = new THREE.SphereGeometry(6, 32, 32);
+        const glowGeometry = new THREE.SphereGeometry(3, 32, 32);
         const glowMaterial = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
@@ -353,9 +353,9 @@ class CosmicVisualization {
         console.log('Birth position:', birthPos);
         console.log('Current position:', currentPos);
 
-        // Create position markers
-        this.birthMarker = this.createPositionMarker(birthPos, 0x00ff88, 'Birth');
-        this.currentMarker = this.createPositionMarker(currentPos, 0xff0088, 'Current');
+        // Create position markers with new colors
+        this.birthMarker = this.createPositionMarker(birthPos, 0x8B0000, 'Birth');  // Dark red
+        this.currentMarker = this.createPositionMarker(currentPos, 0x00008B, 'Now');  // Dark blue
 
         // Get distance traveled for path scaling
         const distanceKm = data.displacement.magnitude_km;
