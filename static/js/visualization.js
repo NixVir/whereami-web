@@ -59,6 +59,17 @@ class CosmicVisualization {
         this.renderer.toneMappingExposure = 1.5;
         this.container.appendChild(this.renderer.domElement);
 
+        // Add OrbitControls for camera interaction
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+            this.controls.screenSpacePanning = false;
+            this.controls.minDistance = 10;
+            this.controls.maxDistance = 5000;
+            this.controls.maxPolarAngle = Math.PI;
+        }
+
         // Add ambient light
         const ambientLight = new THREE.AmbientLight(0x404040);
         this.scene.add(ambientLight);
@@ -146,16 +157,16 @@ class CosmicVisualization {
             // Draw label background with rounded rectangle
             labelCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             labelCtx.beginPath();
-            const x = 10, y = 10, w = 492, h = 108, r = 10;
-            labelCtx.moveTo(x + r, y);
-            labelCtx.lineTo(x + w - r, y);
-            labelCtx.quadraticCurveTo(x + w, y, x + w, y + r);
-            labelCtx.lineTo(x + w, y + h - r);
-            labelCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-            labelCtx.lineTo(x + r, y + h);
-            labelCtx.quadraticCurveTo(x, y + h, x, y + h - r);
-            labelCtx.lineTo(x, y + r);
-            labelCtx.quadraticCurveTo(x, y, x + r, y);
+            const x = 10, y = 10, w = 492, h = 108, radius = 10;
+            labelCtx.moveTo(x + radius, y);
+            labelCtx.lineTo(x + w - radius, y);
+            labelCtx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            labelCtx.lineTo(x + w, y + h - radius);
+            labelCtx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            labelCtx.lineTo(x + radius, y + h);
+            labelCtx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            labelCtx.lineTo(x, y + radius);
+            labelCtx.quadraticCurveTo(x, y, x + radius, y);
             labelCtx.closePath();
             labelCtx.fill();
             
