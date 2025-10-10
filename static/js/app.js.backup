@@ -20,56 +20,14 @@ function initializeApp() {
         document.getElementById('loading-screen').style.display = 'none';
     }, 1000);
 
-    // Initialize date selectors
-    initializeDateSelectors();
-
     // Initialize 3D visualization
     visualization = new CosmicVisualization('visualization-container');
 
     // Set up event listeners
     setupEventListeners();
-}
 
-function initializeDateSelectors() {
-    const yearSelect = document.getElementById('birth-year');
-    const daySelect = document.getElementById('birth-day');
-    const monthSelect = document.getElementById('birth-month');
-
-    // Populate years (1900 to current year + 100)
-    const currentYear = new Date().getFullYear();
-    for (let year = currentYear + 100; year >= 1900; year--) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    }
-
-    // Set default to current year
-    yearSelect.value = currentYear;
-
-    // Populate days (1-31)
-    for (let day = 1; day <= 31; day++) {
-        const option = document.createElement('option');
-        const dayStr = day.toString().padStart(2, '0');
-        option.value = dayStr;
-        option.textContent = day;
-        daySelect.appendChild(option);
-    }
-
-    // Update hidden date field when selects change
-    const updateHiddenDate = () => {
-        const year = yearSelect.value;
-        const month = monthSelect.value;
-        const day = daySelect.value;
-
-        if (year && month && day) {
-            document.getElementById('birth-date').value = `${year}-${month}-${day}`;
-        }
-    };
-
-    yearSelect.addEventListener('change', updateHiddenDate);
-    monthSelect.addEventListener('change', updateHiddenDate);
-    daySelect.addEventListener('change', updateHiddenDate);
+    // Check for same location checkbox
+    updateLocationFieldState();
 }
 
 function setupEventListeners() {
@@ -79,17 +37,13 @@ function setupEventListeners() {
     // Back button
     document.getElementById('back-btn').addEventListener('click', showInputPanel);
 
+    // Same location checkbox
+    document.getElementById('same-location').addEventListener('change', updateLocationFieldState);
+
     // Animation controls
     document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
     document.getElementById('restart-btn').addEventListener('click', restartAnimation);
-    document.getElementById('reset-camera-btn').addEventListener('click', resetCamera);
     document.getElementById('speed-slider').addEventListener('input', updateSpeed);
-    document.getElementById('timeline-slider').addEventListener('input', handleTimelineChange);
-
-    // Preset event buttons
-    document.querySelectorAll('.preset-button').forEach(button => {
-        button.addEventListener('click', handlePresetClick);
-    });
 
     // Show details button
     document.getElementById('show-details-btn').addEventListener('click', toggleDetails);
@@ -111,46 +65,18 @@ function setupEventListeners() {
     });
 }
 
-function handlePresetClick(event) {
-    const button = event.target;
-    const presetDate = button.getAttribute('data-date');
-    const eventName = button.getAttribute('data-name');
+function updateLocationFieldState() {
+    const sameLocation = document.getElementById('same-location').checked;
+    const currentLocationField = document.getElementById('current-location');
 
-    console.log('Preset clicked:', eventName, presetDate);
-
-    const birthDateInput = document.getElementById('birth-date');
-
-    // For extreme future dates beyond year 9999, handle specially
-    if (presetDate.length > 10) {
-        // Store the extreme date in a special way
-        birthDateInput.setAttribute('data-extreme-date', presetDate);
-        birthDateInput.setAttribute('data-event-name', eventName);
-        // Set a placeholder date
-        birthDateInput.value = '9999-12-31';
-
-        // Update visible selects
-        document.getElementById('birth-year').value = '9999';
-        document.getElementById('birth-month').value = '12';
-        document.getElementById('birth-day').value = '31';
+    if (sameLocation) {
+        currentLocationField.disabled = true;
+        currentLocationField.value = '';
+        currentLocationField.placeholder = 'Same as birth location';
     } else {
-        // Regular date - parse and set in both hidden input and selects
-        const [year, month, day] = presetDate.split('-');
-
-        birthDateInput.value = presetDate;
-        birthDateInput.removeAttribute('data-extreme-date');
-        birthDateInput.removeAttribute('data-event-name');
-
-        // Update visible selects
-        document.getElementById('birth-year').value = year;
-        document.getElementById('birth-month').value = month;
-        document.getElementById('birth-day').value = day;
+        currentLocationField.disabled = false;
+        currentLocationField.placeholder = 'Boulder, CO, USA';
     }
-
-    // Store event name for display
-    birthDateInput.setAttribute('data-event-name', eventName);
-
-    // Trigger calculation
-    handleCalculate();
 }
 
 async function handleCalculate() {
@@ -159,31 +85,22 @@ async function handleCalculate() {
     errorDiv.style.display = 'none';
 
     try {
-        // Get form values (most are defaults now)
-        const birthDateInput = document.getElementById('birth-date');
-        let birthDate = birthDateInput.value;
-        const extremeDate = birthDateInput.getAttribute('data-extreme-date');
-        const eventName = birthDateInput.getAttribute('data-event-name');
-
-        // Use extreme date if available
-        if (extremeDate) {
-            birthDate = extremeDate;
-        }
-
-        const birthTime = document.getElementById('birth-time').value || '12:00';
-        const birthTimezone = document.getElementById('birth-timezone').value || 'UTC';
-        const birthLocation = document.getElementById('birth-location').value || 'New York, NY, USA';
-        const sameLocation = true; // Always use same location
-        const currentLocation = birthLocation;
-
-        // Validate inputs before showing loading screen
-        if (!birthDate) {
-            throw new Error('Please enter your birth date');
-        }
-
-        // Show loading only after validation passes
+        // Show loading
         console.log('Showing loading screen');
         showLoading('Geocoding locations...');
+
+        // Get form values
+        const birthDate = document.getElementById('birth-date').value;
+        const birthTime = document.getElementById('birth-time').value || '12:00';
+        const birthTimezone = document.getElementById('birth-timezone').value;
+        const birthLocation = document.getElementById('birth-location').value;
+        const sameLocation = document.getElementById('same-location').checked;
+        const currentLocation = sameLocation ? birthLocation : document.getElementById('current-location').value;
+
+        // Validate inputs
+        if (!birthDate || !birthLocation || (!sameLocation && !currentLocation)) {
+            throw new Error('Please fill in all required fields');
+        }
 
         // Geocode birth location
         updateLoadingStatus('Geocoding birth location...');
@@ -212,8 +129,7 @@ async function handleCalculate() {
             current_timezone: null,
             current_latitude: currentGeocode.latitude,
             current_longitude: currentGeocode.longitude,
-            current_address: currentGeocode.address,
-            event_name: eventName || null
+            current_address: currentGeocode.address
         };
 
         const result = await calculatePosition(calculationData);
@@ -221,7 +137,6 @@ async function handleCalculate() {
         // Store data and show results
         console.log('Storing result and preparing to show');
         currentData = result;
-        currentData.event_name = eventName; // Store event name for display
         updateLoadingStatus('Preparing visualization...');
 
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -322,17 +237,8 @@ function showResults(data) {
         // Update summary
         console.log('Updating summary');
         const years = data.displacement.time_elapsed_years.toFixed(2);
-
-        let summaryText;
-        if (data.event_name) {
-            // Show event name for preset events
-            summaryText = `${data.event_name}: ${formatTimeSpan(years)} years`;
-        } else {
-            // Show age only
-            summaryText = `Age: ${formatTimeSpan(years)} years`;
-        }
-
-        document.getElementById('journey-summary').textContent = summaryText;
+        document.getElementById('journey-summary').textContent =
+            `From ${data.birth.location.address} to ${data.current.location.address} over ${years} years`;
 
         // Update stats
         console.log('Updating stats');
@@ -516,41 +422,6 @@ function showError(message) {
     const errorDiv = document.getElementById('error-message');
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
-}
-
-
-function resetCamera() {
-    if (window.resetVisualizationCamera) {
-        window.resetVisualizationCamera();
-    }
-}
-
-function handleTimelineChange(event) {
-    const sliderValue = parseFloat(event.target.value);
-    const progress = sliderValue / 100;
-
-    // Pause animation if playing
-    if (visualization.isPlaying) {
-        visualization.pauseJourney();
-        const btn = document.getElementById('play-pause-btn');
-        const icon = document.getElementById('play-pause-icon');
-        icon.textContent = '▶';
-        btn.innerHTML = '<span id="play-pause-icon">▶</span> Play Journey';
-    }
-
-    // Set journey progress to slider position
-    visualization.setJourneyProgress(progress);
-}
-
-function formatTimeSpan(years) {
-    if (years >= 1e9) {
-        return (years / 1e9).toFixed(2) + ' billion';
-    } else if (years >= 1e6) {
-        return (years / 1e6).toFixed(2) + ' million';
-    } else if (years >= 1e3) {
-        return (years / 1e3).toFixed(2) + ' thousand';
-    }
-    return years.toFixed(2);
 }
 
 function formatLargeNumber(num) {

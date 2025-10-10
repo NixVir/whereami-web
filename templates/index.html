@@ -17,6 +17,12 @@
 
     <div id="visualization-container"></div>
 
+    <!-- Frame of Reference Indicator -->
+    <div id="frame-reference-indicator">
+        <strong>Frame of Reference:</strong> Cosmic Microwave Background (CMB)
+        <div class="reference-detail">All distances measured relative to the CMB rest frame</div>
+    </div>
+
     <div id="ui-overlay">
         <!-- Header -->
         <header class="app-header">
@@ -27,18 +33,78 @@
         <!-- Input Form -->
         <div id="input-panel" class="panel">
             <h2>Your Cosmic Journey</h2>
-            <p class="form-description">Discover how far you've traveled through space since your birth</p>
+            <p class="form-description">Enter your birthdate or any other date in history:</p>
 
             <div class="form-section">
                 <div class="form-group">
-                    <label for="birth-date">When were you born?</label>
-                    <input type="date" id="birth-date" required>
+                    <label>Select a date:</label>
+                    <div class="date-selector">
+                        <select id="birth-year" required>
+                            <option value="">Year</option>
+                        </select>
+                        <select id="birth-month" required>
+                            <option value="">Month</option>
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <select id="birth-day" required>
+                            <option value="">Day</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="birth-date">
                 </div>
             </div>
 
             <button id="calculate-btn" class="primary-button">
                 Calculate My Journey
             </button>
+
+            <div class="preset-section">
+                <h3>Or Explore Historic & Future Events</h3>
+
+                <div class="preset-category">
+                    <h4>Historic Events</h4>
+                    <div class="preset-buttons">
+                        <button class="preset-button" data-date="1941-12-07" data-name="Pearl Harbor Attack">
+                            Pearl Harbor Attack
+                        </button>
+                        <button class="preset-button" data-date="1066-10-14" data-name="Battle of Hastings">
+                            Battle of Hastings
+                        </button>
+                        <button class="preset-button" data-date="1776-07-04" data-name="Declaration of Independence">
+                            Declaration of Independence
+                        </button>
+                        <button class="preset-button" data-date="-2560-01-01" data-name="Great Pyramid Built">
+                            Great Pyramid Built
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preset-category">
+                    <h4>Future Events</h4>
+                    <div class="preset-buttons">
+                        <button class="preset-button" data-date="2044-08-23" data-name="Next Total Solar Eclipse (North America)">
+                            Next Total Eclipse (NA)
+                        </button>
+                        <button class="preset-button" data-date="2250000000-01-01" data-name="Sun's Next Galactic Orbit">
+                            Sun's Next Galactic Orbit
+                        </button>
+                        <button class="preset-button" data-date="4500000000-01-01" data-name="Milky Way-Andromeda Collision">
+                            Milky Way-Andromeda Collision
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div id="error-message" class="error-message" style="display: none;"></div>
             
@@ -53,11 +119,18 @@
 
         <!-- Results Panel -->
         <div id="results-panel" class="panel" style="display: none;">
-            <button id="back-btn" class="secondary-button">← New Calculation</button>
+            <button id="back-btn" class="secondary-button">← Enter another birthdate, or any date in history</button>
 
             <div class="results-header">
-                <h2>Your Cosmic Journey</h2>
+                <h2>Distance Traveled Since Birth</h2>
                 <p id="journey-summary"></p>
+            </div>
+
+            <div class="journey-controls">
+                <button id="play-pause-btn" class="control-button primary">
+                    <span id="play-pause-icon">▶</span> Play Journey
+                </button>
+                <button id="reset-camera-btn" class="control-button">Reset Camera</button>
             </div>
 
             <div class="stats-grid">
@@ -103,6 +176,15 @@
                     <div class="speed-control">
                         <label>Speed: <span id="speed-value">1x</span></label>
                         <input type="range" id="speed-slider" min="0.5" max="5" step="0.5" value="1">
+                    </div>
+                </div>
+                <div class="timeline-control">
+                    <label>Journey Timeline</label>
+                    <input type="range" id="timeline-slider" min="0" max="100" step="0.1" value="0">
+                    <div class="timeline-labels">
+                        <span>Birth</span>
+                        <span id="timeline-percentage">0%</span>
+                        <span>Now</span>
                     </div>
                 </div>
             </div>

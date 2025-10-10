@@ -104,19 +104,21 @@ class CosmicVisualization {
 
 
     createCelestialLabels() {
-        // Define prominent celestial objects with their approximate positions
+        // Define prominent celestial objects with their approximate positions and velocities
+        // velocity: [vx, vy, vz] in arbitrary units representing relative motion
         const celestialObjects = [
-            { name: 'Sirius', position: [-500, 300, -800], color: '#9BB0FF', info: 'Brightest star' },
-            { name: 'Betelgeuse', position: [800, -400, 600], color: '#FFB380', info: 'Red supergiant' },
-            { name: 'Polaris', position: [0, 1000, -200], color: '#FFF4EA', info: 'North Star' },
-            { name: 'Vega', position: [-700, 600, 400], color: '#FFFFFF', info: 'Star in Lyra' },
-            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], color: '#E6E6FA', info: '2.5 million light-years away' },
-            { name: 'Great Attractor', position: [-1200, -800, -1500], color: '#FF6347', info: 'Gravitational anomaly' },
-            { name: 'Orion Nebula', position: [900, -300, 700], color: '#FF69B4', info: 'Stellar nursery' },
-            { name: 'Pleiades', position: [600, 400, -600], color: '#B0C4DE', info: 'Seven Sisters' }
+            { name: 'Sirius', position: [-500, 300, -800], velocity: [-0.3, 0.1, 0.2], color: '#9BB0FF', info: 'Brightest star' },
+            { name: 'Betelgeuse', position: [800, -400, 600], velocity: [0.2, -0.1, -0.3], color: '#FFB380', info: 'Red supergiant' },
+            { name: 'Polaris', position: [0, 1000, -200], velocity: [0.1, 0.05, 0.1], color: '#FFF4EA', info: 'North Star' },
+            { name: 'Vega', position: [-700, 600, 400], velocity: [-0.2, -0.15, 0.1], color: '#FFFFFF', info: 'Star in Lyra' },
+            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], velocity: [0.5, 0.3, -0.8], color: '#E6E6FA', info: '2.5 million light-years away' },
+            { name: 'Great Attractor', position: [-1200, -800, -1500], velocity: [0.4, 0.2, 0.6], color: '#FF6347', info: 'Gravitational anomaly' },
+            { name: 'Orion Nebula', position: [900, -300, 700], velocity: [0.1, -0.2, 0.3], color: '#FF69B4', info: 'Stellar nursery' },
+            { name: 'Pleiades', position: [600, 400, -600], velocity: [-0.15, 0.1, -0.2], color: '#B0C4DE', info: 'Seven Sisters' }
         ];
 
         this.celestialLabels = [];
+        this.celestialObjects = celestialObjects; // Store for later updates
 
         celestialObjects.forEach(obj => {
             // Create a marker for the celestial object
@@ -443,7 +445,7 @@ class CosmicVisualization {
             this.scene.remove(this.currentMarker.glow);
             if (this.currentMarker.label) this.scene.remove(this.currentMarker.label);
         }
-        
+
         // Remove old path
         if (this.pathLine) {
             this.scene.remove(this.pathLine);
@@ -464,18 +466,18 @@ class CosmicVisualization {
         const geoScale = 100;
         const distanceScale = Math.log10(data.displacement.magnitude_km || 1) * 10;
 
-        // Birth position at origin
+        // Birth position at origin (left)
         const birthPos = {
-            x: 0,
+            x: -distanceScale * 0.5,
             y: 0,
             z: 0
         };
 
-        // Current position based on geographic difference plus distance traveled
+        // Current position to the right of birth
         const currentPos = {
-            x: (data.current.location.longitude - data.birth.location.longitude) / 180 * geoScale,
-            y: (data.current.location.latitude - data.birth.location.latitude) / 90 * geoScale,
-            z: distanceScale
+            x: distanceScale * 0.5,
+            y: (data.current.location.latitude - data.birth.location.latitude) / 90 * geoScale * 0.3,
+            z: (data.current.location.longitude - data.birth.location.longitude) / 180 * geoScale * 0.3
         };
 
         console.log('Birth position:', birthPos);
@@ -488,14 +490,17 @@ class CosmicVisualization {
         // Get distance traveled for path scaling
         const distanceKm = data.displacement.magnitude_km;
 
-        // Create journey path
-        this.journeyCurve = this.createJourneyPath(currentPos, birthPos, distanceKm);
+        // Create journey path from Birth to Now (reversed)
+        this.journeyCurve = this.createJourneyPath(birthPos, currentPos, distanceKm);
+
+        // Update celestial object colors based on time elapsed
+        this.updateCelestialObjectColors(data.displacement.time_elapsed_years);
 
         // Position camera to see the full journey
         const midX = (currentPos.x + birthPos.x) / 2;
         const midY = (currentPos.y + birthPos.y) / 2;
         const midZ = (currentPos.z + birthPos.z) / 2;
-        
+
         // Calculate distance for camera placement
         const distance = Math.sqrt(
             Math.pow(currentPos.x - birthPos.x, 2) +
@@ -503,13 +508,188 @@ class CosmicVisualization {
             Math.pow(currentPos.z - birthPos.z, 2)
         );
 
+        // Use a larger multiplier to ensure both points are visible
+        const cameraDistance = Math.max(distance * 1.5, 100); // Minimum distance of 100
+
         // Camera positioned to see the full path from an angle
         this.camera.position.set(
-            midX + distance * 0.5,
-            midY + distance * 0.3,
-            midZ + distance * 0.8
+            midX + cameraDistance * 0.5,
+            midY + cameraDistance * 0.3,
+            midZ + cameraDistance * 0.8
         );
         this.camera.lookAt(midX, midY, midZ);
+
+        // Update controls target to center of journey
+        if (this.controls) {
+            this.controls.target.set(midX, midY, midZ);
+        }
+    }
+
+    updateCelestialObjectColors(timeElapsedYears) {
+        if (!this.celestialObjects || !this.celestialLabels) return;
+
+        // Camera position (represents "us")
+        const ourPosition = new THREE.Vector3(0, 0, 0);
+
+        // First pass: calculate all distance changes to find min/max
+        const distanceChanges = [];
+        this.celestialObjects.forEach((obj) => {
+            const birthPosition = new THREE.Vector3(obj.position[0], obj.position[1], obj.position[2]);
+            const displacement = new THREE.Vector3(
+                obj.velocity[0] * timeElapsedYears,
+                obj.velocity[1] * timeElapsedYears,
+                obj.velocity[2] * timeElapsedYears
+            );
+            const currentPosition = birthPosition.clone().add(displacement);
+            const distanceAtBirth = birthPosition.distanceTo(ourPosition);
+            const distanceNow = currentPosition.distanceTo(ourPosition);
+            const distanceChange = distanceNow - distanceAtBirth;
+            distanceChanges.push(distanceChange);
+        });
+
+        // Find absolute max distance change for normalization
+        const maxAbsChange = Math.max(...distanceChanges.map(Math.abs));
+
+        this.celestialObjects.forEach((obj, index) => {
+            // Calculate object's position at birth and now
+            const birthPosition = new THREE.Vector3(obj.position[0], obj.position[1], obj.position[2]);
+
+            // Calculate displacement based on velocity and time
+            const displacement = new THREE.Vector3(
+                obj.velocity[0] * timeElapsedYears,
+                obj.velocity[1] * timeElapsedYears,
+                obj.velocity[2] * timeElapsedYears
+            );
+
+            const currentPosition = birthPosition.clone().add(displacement);
+
+            // Calculate distances
+            const distanceAtBirth = birthPosition.distanceTo(ourPosition);
+            const distanceNow = currentPosition.distanceTo(ourPosition);
+            const distanceChange = distanceNow - distanceAtBirth;
+
+            // Normalize and apply logarithmic scaling for better visual perception
+            // Use log scale to make small changes more visible
+            const normalizedChange = distanceChange / maxAbsChange;
+            const logScale = Math.sign(normalizedChange) * Math.log10(1 + Math.abs(normalizedChange) * 9) / Math.log10(10);
+
+            // Calculate color intensity (0 to 1)
+            const intensity = Math.abs(logScale);
+
+            let finalColor;
+            if (distanceChange > 0) {
+                // Moving away - red gradient (darker red to bright red)
+                const r = Math.floor(100 + intensity * 155); // 100-255
+                const g = Math.floor((1 - intensity) * 50);   // 50-0
+                const b = Math.floor((1 - intensity) * 50);   // 50-0
+                finalColor = `rgb(${r}, ${g}, ${b})`;
+            } else if (distanceChange < 0) {
+                // Moving closer - blue gradient (darker blue to bright blue)
+                const r = Math.floor((1 - intensity) * 50);   // 50-0
+                const g = Math.floor((1 - intensity) * 50);   // 50-0
+                const b = Math.floor(100 + intensity * 155); // 100-255
+                finalColor = `rgb(${r}, ${g}, ${b})`;
+            } else {
+                // No change - use original color
+                finalColor = obj.color;
+            }
+
+            const movingAway = distanceChange > 0;
+            const movingCloser = distanceChange < 0;
+
+            // Update the marker sprite (first element for each object)
+            const markerIndex = index * 2;
+            if (this.celestialLabels[markerIndex]) {
+                const sprite = this.celestialLabels[markerIndex];
+
+                // Recreate the texture with new color
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                const col = new THREE.Color(finalColor);
+                const r = Math.floor(col.r * 255);
+                const g = Math.floor(col.g * 255);
+                const b = Math.floor(col.b * 255);
+
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(0.2, 'rgba(' + r + ',' + g + ',' + b + ', 0.9)');
+                gradient.addColorStop(0.5, 'rgba(' + r + ',' + g + ',' + b + ', 0.5)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                sprite.material.map = texture;
+                sprite.material.needsUpdate = true;
+            }
+
+            // Update the label sprite (second element for each object)
+            const labelIndex = index * 2 + 1;
+            if (this.celestialLabels[labelIndex]) {
+                const labelSprite = this.celestialLabels[labelIndex];
+
+                // Recreate label with new color
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 1024;
+                labelCanvas.height = 256;
+                const labelCtx = labelCanvas.getContext('2d');
+
+                // Draw label background
+                labelCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                labelCtx.beginPath();
+                const x = 20, y = 20, w = 984, h = 216, radius = 20;
+                labelCtx.moveTo(x + radius, y);
+                labelCtx.lineTo(x + w - radius, y);
+                labelCtx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                labelCtx.lineTo(x + w, y + h - radius);
+                labelCtx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                labelCtx.lineTo(x + radius, y + h);
+                labelCtx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                labelCtx.lineTo(x, y + radius);
+                labelCtx.quadraticCurveTo(x, y, x + radius, y);
+                labelCtx.closePath();
+                labelCtx.fill();
+
+                // Draw border with new color
+                labelCtx.strokeStyle = finalColor;
+                labelCtx.lineWidth = 3;
+                labelCtx.stroke();
+
+                // Draw text with new color
+                labelCtx.fillStyle = finalColor;
+                labelCtx.font = 'Bold 72px Arial';
+                labelCtx.textAlign = 'center';
+                labelCtx.fillText(obj.name, 512, 104);
+
+                // Show movement info and distance change percentage
+                let distanceInfo;
+                let infoColor;
+                const percentChange = Math.abs((distanceChange / distanceAtBirth) * 100);
+
+                if (movingAway) {
+                    distanceInfo = `Moving away (${percentChange.toFixed(2)}% farther)`;
+                    infoColor = '#FFB0B0';
+                } else if (movingCloser) {
+                    distanceInfo = `Moving closer (${percentChange.toFixed(2)}% nearer)`;
+                    infoColor = '#B0B0FF';
+                } else {
+                    distanceInfo = obj.info;
+                    infoColor = '#AAA';
+                }
+
+                labelCtx.fillStyle = infoColor;
+                labelCtx.font = '48px Arial';
+                labelCtx.fillText(distanceInfo, 512, 176);
+
+                const labelTexture = new THREE.CanvasTexture(labelCanvas);
+                labelSprite.material.map = labelTexture;
+                labelSprite.material.needsUpdate = true;
+            }
+        });
     }
 
 
@@ -522,8 +702,10 @@ class CosmicVisualization {
         if (!this.journeyData || !this.journeyCurve) return;
 
         this.isPlaying = true;
-        this.journeyProgress = 0;
-        
+        if (this.journeyProgress === undefined || this.journeyProgress >= 1) {
+            this.journeyProgress = 0;
+        }
+
         // Disable controls during journey
         if (this.controls) {
             this.controls.enabled = false;
@@ -531,6 +713,7 @@ class CosmicVisualization {
 
         const duration = 10000 / this.animationSpeed;
         const startTime = Date.now();
+        const startProgress = this.journeyProgress;
 
         const animate = (time) => {
             if (!this.isPlaying) return;
@@ -539,29 +722,24 @@ class CosmicVisualization {
             const rawProgress = Math.min(elapsed / duration, 1);
 
             // Apply easing for smooth acceleration/deceleration
-            this.journeyProgress = this.easeInOutCubic(rawProgress);
+            const easedProgress = this.easeInOutCubic(rawProgress);
+            this.journeyProgress = startProgress + (1 - startProgress) * easedProgress;
 
             if (rawProgress >= 1) {
                 this.journeyProgress = 1;
                 this.isPlaying = false;
-                
+
                 // Re-enable controls when journey finishes
                 if (this.controls) {
                     this.controls.enabled = true;
                 }
             }
 
-            // Get position along curve
-            const point = this.journeyCurve.getPoint(this.journeyProgress);
-            const tangent = this.journeyCurve.getTangent(this.journeyProgress);
+            // Update camera position along journey
+            this.updateCameraAlongJourney();
 
-            // Smooth camera movement with slight offset
-            this.camera.position.copy(point);
-            this.camera.position.z += 30;
-            this.camera.position.y += 10;
-
-            const lookAt = point.clone().add(tangent.multiplyScalar(50));
-            this.camera.lookAt(lookAt);
+            // Update timeline slider
+            this.updateTimelineSlider();
 
             if (this.isPlaying) {
                 requestAnimationFrame(animate);
@@ -569,6 +747,43 @@ class CosmicVisualization {
         };
 
         requestAnimationFrame(animate);
+    }
+
+    updateCameraAlongJourney() {
+        if (!this.journeyCurve) return;
+
+        // Get position along curve
+        const point = this.journeyCurve.getPoint(this.journeyProgress);
+        const tangent = this.journeyCurve.getTangent(this.journeyProgress);
+
+        // Smooth camera movement with slight offset
+        this.camera.position.copy(point);
+        this.camera.position.z += 30;
+        this.camera.position.y += 10;
+
+        const lookAt = point.clone().add(tangent.multiplyScalar(50));
+        this.camera.lookAt(lookAt);
+    }
+
+    setJourneyProgress(progress) {
+        if (!this.journeyCurve) return;
+
+        this.journeyProgress = Math.max(0, Math.min(1, progress));
+        this.updateCameraAlongJourney();
+        this.updateTimelineSlider();
+    }
+
+    updateTimelineSlider() {
+        const slider = document.getElementById('timeline-slider');
+        const percentage = document.getElementById('timeline-percentage');
+
+        if (slider && this.journeyProgress !== undefined) {
+            slider.value = this.journeyProgress * 100;
+        }
+
+        if (percentage && this.journeyProgress !== undefined) {
+            percentage.textContent = Math.round(this.journeyProgress * 100) + '%';
+        }
     }
 
     pauseJourney() {
@@ -687,7 +902,7 @@ class CosmicVisualization {
         indicator.id = 'controls-indicator';
         indicator.innerHTML = `
             <div style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; font-family: Arial; z-index: 1000; border: 2px solid #667eea;">
-                <div style="font-weight: bold; margin-bottom: 8px; color: #667eea;">🎮 Camera Controls Active</div>
+                <div style="font-weight: bold; margin-bottom: 8px; color: #667eea;">🎮 Camera Controls</div>
                 <div style="font-size: 12px; line-height: 1.6;">
                     🖱️ <strong>Left Drag</strong>: Rotate<br>
                     🖱️ <strong>Right Drag</strong>: Pan<br>
@@ -696,16 +911,8 @@ class CosmicVisualization {
             </div>
         `;
         document.body.appendChild(indicator);
-        
-        // Remove after 5 seconds
-        setTimeout(() => {
-            const elem = document.getElementById('controls-indicator');
-            if (elem) {
-                elem.style.transition = 'opacity 1s';
-                elem.style.opacity = '0';
-                setTimeout(() => elem.remove(), 1000);
-            }
-        }, 5000);
+
+        // Keep it persistent - don't remove it
     }
 
 
