@@ -72,12 +72,121 @@ class CosmicVisualization {
         this.createMilkyWayBackground();
         this.createRealisticStarField();
         this.createNebulae();
+        this.createCelestialLabels();
 
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
 
         // Start animation loop
         this.animate();
+    }
+
+
+    createCelestialLabels() {
+        // Define prominent celestial objects with their approximate positions
+        const celestialObjects = [
+            { name: 'Sirius', position: [-500, 300, -800], color: '#9BB0FF', info: 'Brightest star in night sky' },
+            { name: 'Betelgeuse', position: [800, -400, 600], color: '#FFB380', info: 'Red supergiant in Orion' },
+            { name: 'Polaris', position: [0, 1000, -200], color: '#FFF4EA', info: 'North Star' },
+            { name: 'Vega', position: [-700, 600, 400], color: '#FFFFFF', info: 'Brightest star in Lyra' },
+            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], color: '#E6E6FA', info: 'Nearest major galaxy' },
+            { name: 'Orion Nebula', position: [900, -300, 700], color: '#FF69B4', info: 'Stellar nursery' },
+            { name: 'Pleiades', position: [600, 400, -600], color: '#B0C4DE', info: 'Seven Sisters cluster' },
+            { name: 'Alpha Centauri', position: [-400, -500, 900], color: '#FFD700', info: 'Nearest star system' }
+        ];
+
+        this.celestialLabels = [];
+
+        celestialObjects.forEach(obj => {
+            // Create a marker for the celestial object
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw a bright star marker
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            const col = new THREE.Color(obj.color);
+            const r = Math.floor(col.r * 255);
+            const g = Math.floor(col.g * 255);
+            const b = Math.floor(col.b * 255);
+            
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.2, 'rgba(' + r + ',' + g + ',' + b + ', 0.9)');
+            gradient.addColorStop(0.5, 'rgba(' + r + ',' + g + ',' + b + ', 0.5)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.set(obj.position[0], obj.position[1], obj.position[2]);
+            sprite.scale.set(15, 15, 1);
+            
+            this.scene.add(sprite);
+            this.celestialLabels.push(sprite);
+
+            // Create text label
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 512;
+            labelCanvas.height = 128;
+            const labelCtx = labelCanvas.getContext('2d');
+            
+            // Draw label background
+            labelCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            labelCtx.roundRect = function(x, y, w, h, r) {
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.lineTo(x + w - r, y);
+                this.quadraticCurveTo(x + w, y, x + w, y + r);
+                this.lineTo(x + w, y + h - r);
+                this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                this.lineTo(x + r, y + h);
+                this.quadraticCurveTo(x, y + h, x, y + h - r);
+                this.lineTo(x, y + r);
+                this.quadraticCurveTo(x, y, x + r, y);
+                this.closePath();
+            };
+            labelCtx.roundRect(10, 10, 492, 108, 10);
+            labelCtx.fill();
+            
+            // Draw border
+            labelCtx.strokeStyle = obj.color;
+            labelCtx.lineWidth = 2;
+            labelCtx.roundRect(10, 10, 492, 108, 10);
+            labelCtx.stroke();
+            
+            // Draw text
+            labelCtx.fillStyle = obj.color;
+            labelCtx.font = 'Bold 36px Arial';
+            labelCtx.textAlign = 'center';
+            labelCtx.fillText(obj.name, 256, 52);
+            
+            labelCtx.fillStyle = '#AAA';
+            labelCtx.font = '24px Arial';
+            labelCtx.fillText(obj.info, 256, 88);
+            
+            const labelTexture = new THREE.CanvasTexture(labelCanvas);
+            const labelMaterial = new THREE.SpriteMaterial({
+                map: labelTexture,
+                transparent: true
+            });
+            
+            const labelSprite = new THREE.Sprite(labelMaterial);
+            labelSprite.position.set(obj.position[0], obj.position[1] + 30, obj.position[2]);
+            labelSprite.scale.set(80, 20, 1);
+            
+            this.scene.add(labelSprite);
+            this.celestialLabels.push(labelSprite);
+        });
     }
 
     createParticleSystems() {
