@@ -106,13 +106,15 @@ class CosmicVisualization {
     createCelestialLabels() {
         // Define prominent celestial objects with their approximate positions and velocities
         // velocity: [vx, vy, vz] in arbitrary units representing relative motion
+        // Negative velocity components = moving toward us (blue), Positive = moving away (red)
         const celestialObjects = [
             { name: 'Sirius', position: [-500, 300, -800], velocity: [-0.3, 0.1, 0.2], color: '#9BB0FF', info: 'Brightest star' },
             { name: 'Betelgeuse', position: [800, -400, 600], velocity: [0.2, -0.1, -0.3], color: '#FFB380', info: 'Red supergiant' },
             { name: 'Polaris', position: [0, 1000, -200], velocity: [0.1, 0.05, 0.1], color: '#FFF4EA', info: 'North Star' },
             { name: 'Vega', position: [-700, 600, 400], velocity: [-0.2, -0.15, 0.1], color: '#FFFFFF', info: 'Star in Lyra' },
-            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], velocity: [0.5, 0.3, -0.8], color: '#E6E6FA', info: '2.5 million light-years away' },
-            { name: 'Great Attractor', position: [-1200, -800, -1500], velocity: [0.4, 0.2, 0.6], color: '#FF6347', info: 'Gravitational anomaly' },
+            { name: 'Andromeda Galaxy', position: [1500, 200, -1200], velocity: [-0.9, -0.1, 0.7], color: '#E6E6FA', info: 'Approaching at 110 km/s' },
+            { name: 'Great Attractor', position: [-1200, -800, -1500], velocity: [0.7, 0.5, 0.9], color: '#FF6347', info: 'We are moving toward it' },
+            { name: 'Virgo Cluster', position: [-1000, 600, -1300], velocity: [0.6, -0.3, 0.8], color: '#FFD700', info: 'Galaxy cluster we approach' },
             { name: 'Orion Nebula', position: [900, -300, 700], velocity: [0.1, -0.2, 0.3], color: '#FF69B4', info: 'Stellar nursery' },
             { name: 'Pleiades', position: [600, 400, -600], velocity: [-0.15, 0.1, -0.2], color: '#B0C4DE', info: 'Seven Sisters' }
         ];
@@ -153,9 +155,9 @@ class CosmicVisualization {
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.set(obj.position[0], obj.position[1], obj.position[2]);
 
-            // Make Great Attractor marker extra large
-            if (obj.name === 'Great Attractor') {
-                sprite.scale.set(80, 80, 1);  // 2x larger for prominence
+            // Make approaching objects and Great Attractor extra large
+            if (obj.name === 'Great Attractor' || obj.name === 'Andromeda Galaxy' || obj.name === 'Virgo Cluster') {
+                sprite.scale.set(80, 80, 1);  // 2x larger for prominent approaching objects
             } else {
                 sprite.scale.set(60, 60, 1);  // 1.5x larger markers overall
             }
@@ -209,9 +211,9 @@ class CosmicVisualization {
             const labelSprite = new THREE.Sprite(labelMaterial);
             labelSprite.position.set(obj.position[0], obj.position[1] + 60, obj.position[2]);
 
-            // Make all labels significantly larger, with Great Attractor extra large
-            if (obj.name === 'Great Attractor') {
-                labelSprite.scale.set(600, 150, 1);  // 3x standard size
+            // Make all labels significantly larger, with approaching objects extra large
+            if (obj.name === 'Great Attractor' || obj.name === 'Andromeda Galaxy' || obj.name === 'Virgo Cluster') {
+                labelSprite.scale.set(600, 150, 1);  // 3x standard size for approaching objects
             } else {
                 labelSprite.scale.set(400, 100, 1);  // 2x larger than previous standard
             }
