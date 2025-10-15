@@ -1292,9 +1292,10 @@ class CosmicVisualization {
         // We'll represent it as a semi-transparent spherical shell with particles
 
         // Create two layers for inner and outer Oort Cloud
+        // Adjusted for better visibility in the cosmic visualization
         const layers = [
-            { radius: 400, particleCount: 2000, size: 1, opacity: 0.15, color: 0x88CCFF },  // Inner Oort
-            { radius: 600, particleCount: 3000, size: 0.8, opacity: 0.1, color: 0xAADDFF }   // Outer Oort
+            { radius: 400, particleCount: 3000, size: 3, opacity: 0.4, color: 0x88CCFF },  // Inner Oort - increased visibility
+            { radius: 600, particleCount: 4000, size: 2.5, opacity: 0.3, color: 0xAADDFF }   // Outer Oort - increased visibility
         ];
         console.log('Oort Cloud layers defined:', layers.length, 'layers');
 
@@ -1334,7 +1335,7 @@ class CosmicVisualization {
                 transparent: true,
                 opacity: layer.opacity,
                 sizeAttenuation: true,
-                blending: THREE.NormalBlending,
+                blending: THREE.AdditiveBlending,  // Changed to additive for glow effect
                 depthWrite: false
             });
 
