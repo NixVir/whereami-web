@@ -152,8 +152,14 @@ class CosmicVisualization {
             
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.set(obj.position[0], obj.position[1], obj.position[2]);
-            sprite.scale.set(40, 40, 1);  // Much larger markers
-            
+
+            // Make Great Attractor marker extra large
+            if (obj.name === 'Great Attractor') {
+                sprite.scale.set(80, 80, 1);  // 2x larger for prominence
+            } else {
+                sprite.scale.set(60, 60, 1);  // 1.5x larger markers overall
+            }
+
             this.scene.add(sprite);
             this.celestialLabels.push(sprite);
 
@@ -203,11 +209,11 @@ class CosmicVisualization {
             const labelSprite = new THREE.Sprite(labelMaterial);
             labelSprite.position.set(obj.position[0], obj.position[1] + 60, obj.position[2]);
 
-            // Make Great Attractor label significantly larger for readability
+            // Make all labels significantly larger, with Great Attractor extra large
             if (obj.name === 'Great Attractor') {
-                labelSprite.scale.set(400, 100, 1);  // 2x larger than other labels
+                labelSprite.scale.set(600, 150, 1);  // 3x standard size
             } else {
-                labelSprite.scale.set(200, 50, 1);  // Standard size for other labels
+                labelSprite.scale.set(400, 100, 1);  // 2x larger than previous standard
             }
 
             this.scene.add(labelSprite);
