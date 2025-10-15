@@ -754,7 +754,7 @@ body {
     .panel {
         width: 95%;
         padding: 20px;
-        max-height: 40vh;
+        max-height: 30vh;
         /* Position panels at bottom with sheet-style layout */
         top: auto;
         bottom: 0;
@@ -779,7 +779,7 @@ body {
         transform: translateX(-50%);
         max-width: 95%;
         width: 95%;
-        max-height: 40vh;
+        max-height: 30vh;
         /* Slightly more opaque for readability with more content */
         background: rgba(0, 0, 0, 0.7);
     }
