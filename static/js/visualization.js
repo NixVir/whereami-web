@@ -93,6 +93,7 @@ class CosmicVisualization {
         this.createMilkyWayBackground();
         this.createRealisticStarField();
         this.createNebulae();
+        this.createOortCloud();
         this.createCelestialLabels();
 
         // Handle window resize
@@ -1283,6 +1284,110 @@ class CosmicVisualization {
             this.nebulae.push(nebula);
             this.scene.add(nebula);
         }
+    }
+
+    createOortCloud() {
+        // The Oort Cloud is a spherical shell of icy objects at 2,000-100,000 AU from the Sun
+        // We'll represent it as a semi-transparent spherical shell with particles
+
+        // Create two layers for inner and outer Oort Cloud
+        const layers = [
+            { radius: 400, particleCount: 2000, size: 1, opacity: 0.15, color: 0x88CCFF },  // Inner Oort
+            { radius: 600, particleCount: 3000, size: 0.8, opacity: 0.1, color: 0xAADDFF }   // Outer Oort
+        ];
+
+        layers.forEach(layer => {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            for (let i = 0; i < layer.particleCount; i++) {
+                // Create particles on a spherical shell (not filled sphere)
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                // Add slight thickness to the shell
+                const radiusVariation = layer.radius + (Math.random() - 0.5) * 50;
+
+                const x = radiusVariation * Math.sin(phi) * Math.cos(theta);
+                const y = radiusVariation * Math.sin(phi) * Math.sin(theta);
+                const z = radiusVariation * Math.cos(phi);
+
+                positions.push(x, y, z);
+
+                // Slight color variation for icy look
+                const col = new THREE.Color(layer.color);
+                col.r += (Math.random() - 0.5) * 0.1;
+                col.g += (Math.random() - 0.5) * 0.1;
+                col.b += (Math.random() - 0.5) * 0.05;
+                colors.push(col.r, col.g, col.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: layer.size,
+                vertexColors: true,
+                transparent: true,
+                opacity: layer.opacity,
+                sizeAttenuation: true,
+                blending: THREE.NormalBlending,
+                depthWrite: false
+            });
+
+            const oortLayer = new THREE.Points(geometry, material);
+            this.scene.add(oortLayer);
+        });
+
+        // Add Oort Cloud label
+        const labelCanvas = document.createElement('canvas');
+        labelCanvas.width = 1024;
+        labelCanvas.height = 256;
+        const ctx = labelCanvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.beginPath();
+        const x = 20, y = 20, w = 984, h = 216, radius = 20;
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = '#88CCFF';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = '#88CCFF';
+        ctx.font = 'Bold 72px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Oort Cloud', 512, 104);
+
+        ctx.fillStyle = '#AAA';
+        ctx.font = '48px Arial';
+        ctx.fillText('Outer boundary of Solar System', 512, 176);
+
+        const labelTexture = new THREE.CanvasTexture(labelCanvas);
+        const labelMaterial = new THREE.SpriteMaterial({
+            map: labelTexture,
+            transparent: true
+        });
+
+        const labelSprite = new THREE.Sprite(labelMaterial);
+        labelSprite.position.set(0, 650, 0);  // Above the Oort Cloud
+        labelSprite.scale.set(500, 125, 1);  // Large label
+
+        this.scene.add(labelSprite);
     }
 
 }
