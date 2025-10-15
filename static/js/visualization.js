@@ -742,7 +742,7 @@ class CosmicVisualization {
     }
 
     playJourney() {
-        if (!this.journeyData || !this.journeyCurve) return;
+        if (!this.journeyData || !this.birthMarker || !this.currentMarker) return;
 
         this.isPlaying = true;
         if (this.journeyProgress === undefined || this.journeyProgress >= 1) {
@@ -754,7 +754,14 @@ class CosmicVisualization {
             this.controls.enabled = false;
         }
 
-        const duration = 10000 / this.animationSpeed;
+        // Get start and end positions
+        const birthPos = this.birthMarker.sphere.position;
+        const currentPos = this.currentMarker.sphere.position;
+
+        // Two-phase animation: warp jump (8s) + zoom out (6s)
+        const warpDuration = 8000 / this.animationSpeed;
+        const zoomDuration = 6000 / this.animationSpeed;
+        const totalDuration = warpDuration + zoomDuration;
         const startTime = Date.now();
         const startProgress = this.journeyProgress;
 
@@ -762,14 +769,26 @@ class CosmicVisualization {
             if (!this.isPlaying) return;
 
             const elapsed = Date.now() - startTime;
-            const rawProgress = Math.min(elapsed / duration, 1);
+            const rawProgress = Math.min(elapsed / totalDuration, 1);
 
-            // Apply easing for smooth acceleration/deceleration
-            const easedProgress = this.easeInOutCubic(rawProgress);
-            this.journeyProgress = startProgress + (1 - startProgress) * easedProgress;
+            if (rawProgress < (warpDuration / totalDuration)) {
+                // Phase 1: Warp jump from birth to current
+                const warpProgress = (elapsed / warpDuration);
+                const easedWarp = this.easeInOutQuad(warpProgress);
+
+                this.journeyProgress = startProgress + (1 - startProgress) * easedWarp;
+                this.updateCameraWarpJump(birthPos, currentPos, easedWarp);
+
+            } else {
+                // Phase 2: Zoom out to show Andromeda
+                this.journeyProgress = 1;
+                const zoomProgress = (elapsed - warpDuration) / zoomDuration;
+                const easedZoom = this.easeInOutCubic(zoomProgress);
+
+                this.updateCameraZoomOut(currentPos, easedZoom);
+            }
 
             if (rawProgress >= 1) {
-                this.journeyProgress = 1;
                 this.isPlaying = false;
 
                 // Re-enable controls when journey finishes
@@ -777,9 +796,6 @@ class CosmicVisualization {
                     this.controls.enabled = true;
                 }
             }
-
-            // Update camera position along journey
-            this.updateCameraAlongJourney();
 
             // Update timeline slider
             this.updateTimelineSlider();
@@ -792,27 +808,101 @@ class CosmicVisualization {
         requestAnimationFrame(animate);
     }
 
-    updateCameraAlongJourney() {
-        if (!this.journeyCurve) return;
+    updateCameraWarpJump(startPos, endPos, progress) {
+        // Linear interpolation from start to end (warp jump style)
+        const x = startPos.x + (endPos.x - startPos.x) * progress;
+        const y = startPos.y + (endPos.y - startPos.y) * progress;
+        const z = startPos.z + (endPos.z - startPos.z) * progress;
 
-        // Get position along curve
-        const point = this.journeyCurve.getPoint(this.journeyProgress);
-        const tangent = this.journeyCurve.getTangent(this.journeyProgress);
+        // Camera positioned slightly behind current progress point
+        this.camera.position.set(x, y, z + 30);
 
-        // Smooth camera movement with slight offset
-        this.camera.position.copy(point);
-        this.camera.position.z += 30;
-        this.camera.position.y += 10;
+        // Look toward the destination
+        this.camera.lookAt(endPos.x, endPos.y, endPos.z);
 
-        const lookAt = point.clone().add(tangent.multiplyScalar(50));
-        this.camera.lookAt(lookAt);
+        // Add warp effect by making stars streak (increase fog density during warp)
+        if (progress > 0.1 && progress < 0.9) {
+            // Warping phase - intensify fog
+            if (this.scene.fog) {
+                this.scene.fog.density = 0.00015 + (Math.sin(progress * Math.PI) * 0.0002);
+            }
+        } else {
+            // Entry/exit phase - normal fog
+            if (this.scene.fog) {
+                this.scene.fog.density = 0.00015;
+            }
+        }
+    }
+
+    updateCameraZoomOut(centerPos, progress) {
+        // Calculate zoom out to show Andromeda at [1500, 200, -1200]
+        const andromedaPos = { x: 1500, y: 200, z: -1200 };
+
+        // Start position: close to current position
+        const startCamPos = {
+            x: centerPos.x,
+            y: centerPos.y,
+            z: centerPos.z + 30
+        };
+
+        // End position: far enough to see both current position and Andromeda
+        // Calculate midpoint between current and Andromeda
+        const midX = (centerPos.x + andromedaPos.x) / 2;
+        const midY = (centerPos.y + andromedaPos.y) / 2;
+        const midZ = (centerPos.z + andromedaPos.z) / 2;
+
+        // Calculate distance to determine camera position
+        const dist = Math.sqrt(
+            Math.pow(andromedaPos.x - centerPos.x, 2) +
+            Math.pow(andromedaPos.y - centerPos.y, 2) +
+            Math.pow(andromedaPos.z - centerPos.z, 2)
+        );
+
+        const endCamPos = {
+            x: midX + dist * 0.4,
+            y: midY + dist * 0.3,
+            z: midZ + dist * 0.6
+        };
+
+        // Interpolate camera position
+        const camX = startCamPos.x + (endCamPos.x - startCamPos.x) * progress;
+        const camY = startCamPos.y + (endCamPos.y - startCamPos.y) * progress;
+        const camZ = startCamPos.z + (endCamPos.z - startCamPos.z) * progress;
+
+        this.camera.position.set(camX, camY, camZ);
+
+        // Interpolate look-at target from current position to midpoint
+        const lookX = centerPos.x + (midX - centerPos.x) * progress;
+        const lookY = centerPos.y + (midY - centerPos.y) * progress;
+        const lookZ = centerPos.z + (midZ - centerPos.z) * progress;
+
+        this.camera.lookAt(lookX, lookY, lookZ);
+
+        // Update controls target for smooth transition
+        if (this.controls) {
+            this.controls.target.set(lookX, lookY, lookZ);
+        }
+
+        // Reset fog to normal
+        if (this.scene.fog) {
+            this.scene.fog.density = 0.00015;
+        }
+    }
+
+    easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
     }
 
     setJourneyProgress(progress) {
-        if (!this.journeyCurve) return;
+        if (!this.birthMarker || !this.currentMarker) return;
 
         this.journeyProgress = Math.max(0, Math.min(1, progress));
-        this.updateCameraAlongJourney();
+
+        const birthPos = this.birthMarker.sphere.position;
+        const currentPos = this.currentMarker.sphere.position;
+
+        // Update camera based on progress (warp jump interpolation)
+        this.updateCameraWarpJump(birthPos, currentPos, this.journeyProgress);
         this.updateTimelineSlider();
     }
 
