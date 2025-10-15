@@ -202,8 +202,14 @@ class CosmicVisualization {
             
             const labelSprite = new THREE.Sprite(labelMaterial);
             labelSprite.position.set(obj.position[0], obj.position[1] + 60, obj.position[2]);
-            labelSprite.scale.set(200, 50, 1);  // Much larger labels
-            
+
+            // Make Great Attractor label significantly larger for readability
+            if (obj.name === 'Great Attractor') {
+                labelSprite.scale.set(400, 100, 1);  // 2x larger than other labels
+            } else {
+                labelSprite.scale.set(200, 50, 1);  // Standard size for other labels
+            }
+
             this.scene.add(labelSprite);
             this.celestialLabels.push(labelSprite);
         });
@@ -292,15 +298,39 @@ class CosmicVisualization {
         // Create a canvas for the text
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        canvas.width = 256;
-        canvas.height = 128;
+        canvas.width = 512;
+        canvas.height = 256;
 
-        // Draw text
-        context.fillStyle = color;
-        context.font = 'Bold 48px Arial';
+        // Setup font for measuring
+        context.font = 'Bold 36px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(text, 128, 64);
+
+        // Split text into multiple lines if needed (word wrap)
+        const maxWidth = 480;
+        const lineHeight = 44;
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const testLine = currentLine + ' ' + words[i];
+            const metrics = context.measureText(testLine);
+            if (metrics.width > maxWidth) {
+                lines.push(currentLine);
+                currentLine = words[i];
+            } else {
+                currentLine = testLine;
+            }
+        }
+        lines.push(currentLine);
+
+        // Draw text with multiple lines
+        context.fillStyle = color;
+        const startY = 128 - ((lines.length - 1) * lineHeight) / 2;
+        lines.forEach((line, index) => {
+            context.fillText(line, 256, startY + (index * lineHeight));
+        });
 
         // Create texture from canvas
         const texture = new THREE.CanvasTexture(canvas);
@@ -313,7 +343,7 @@ class CosmicVisualization {
 
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.position.set(position.x, position.y + 5, position.z);
-        sprite.scale.set(10, 5, 1);
+        sprite.scale.set(20, 10, 1);
 
         return sprite;
     }
