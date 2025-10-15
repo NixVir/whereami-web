@@ -44,8 +44,9 @@ function initializeDateSelectors() {
         yearSelect.appendChild(option);
     }
 
-    // Set default to current year
-    yearSelect.value = currentYear;
+    // Set default to October 15, 1961
+    yearSelect.value = 1961;
+    monthSelect.value = '10';
 
     // Populate days (1-31)
     for (let day = 1; day <= 31; day++) {
@@ -55,6 +56,9 @@ function initializeDateSelectors() {
         option.textContent = day;
         daySelect.appendChild(option);
     }
+
+    // Set default day to 15
+    daySelect.value = '15';
 
     // Update hidden date field when selects change
     const updateHiddenDate = () => {
