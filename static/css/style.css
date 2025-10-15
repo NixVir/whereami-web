@@ -734,6 +734,9 @@ body {
     .app-header {
         padding: 15px 20px;
         top: 10px;
+        /* Make header more transparent on mobile for better animation visibility */
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
     }
 
     .app-header h1 {
@@ -751,20 +754,34 @@ body {
     .panel {
         width: 95%;
         padding: 20px;
-        max-height: 90vh;
+        max-height: 40vh;
+        /* Position panels at bottom with sheet-style layout */
+        top: auto;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 20px 20px 0 0;
+        /* Increase transparency for better animation visibility */
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
     }
 
     #input-panel {
-        top: 60%;
+        bottom: 0;
+        top: auto;
     }
 
     #results-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        max-width: calc(100% - 20px);
-        max-height: calc(100vh - 20px);
-        transform: none;
+        bottom: 0;
+        top: auto;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        max-width: 95%;
+        width: 95%;
+        max-height: 40vh;
+        /* Slightly more opaque for readability with more content */
+        background: rgba(0, 0, 0, 0.7);
     }
 
     .controls {
