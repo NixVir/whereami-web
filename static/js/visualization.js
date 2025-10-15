@@ -1287,6 +1287,7 @@ class CosmicVisualization {
     }
 
     createOortCloud() {
+        console.log('🌨️ Creating Oort Cloud...');
         // The Oort Cloud is a spherical shell of icy objects at 2,000-100,000 AU from the Sun
         // We'll represent it as a semi-transparent spherical shell with particles
 
@@ -1295,6 +1296,7 @@ class CosmicVisualization {
             { radius: 400, particleCount: 2000, size: 1, opacity: 0.15, color: 0x88CCFF },  // Inner Oort
             { radius: 600, particleCount: 3000, size: 0.8, opacity: 0.1, color: 0xAADDFF }   // Outer Oort
         ];
+        console.log('Oort Cloud layers defined:', layers.length, 'layers');
 
         layers.forEach(layer => {
             const geometry = new THREE.BufferGeometry();
@@ -1388,6 +1390,7 @@ class CosmicVisualization {
         labelSprite.scale.set(500, 125, 1);  // Large label
 
         this.scene.add(labelSprite);
+        console.log('✅ Oort Cloud created successfully with label');
     }
 
 }

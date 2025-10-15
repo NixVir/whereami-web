@@ -378,6 +378,16 @@ function showResults(data) {
         console.log('Loading visualization data');
         visualization.loadJourneyData(data);
 
+        // Auto-play the journey animation
+        setTimeout(() => {
+            console.log('Auto-playing journey animation');
+            visualization.playJourney();
+            const btn = document.getElementById('play-pause-btn');
+            const icon = document.getElementById('play-pause-icon');
+            icon.textContent = '⏸';
+            btn.innerHTML = '<span id="play-pause-icon">⏸</span> Pause Journey';
+        }, 500); // Small delay to ensure visualization is ready
+
         console.log('showResults completed successfully');
     } catch (error) {
         console.error('Error in showResults:', error);
