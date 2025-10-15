@@ -532,32 +532,20 @@ class CosmicVisualization {
         // Update celestial object colors based on time elapsed
         this.updateCelestialObjectColors(data.displacement.time_elapsed_years);
 
-        // Position camera to see the full journey
-        const midX = (currentPos.x + birthPos.x) / 2;
-        const midY = (currentPos.y + birthPos.y) / 2;
-        const midZ = (currentPos.z + birthPos.z) / 2;
-
-        // Calculate distance for camera placement
-        const distance = Math.sqrt(
-            Math.pow(currentPos.x - birthPos.x, 2) +
-            Math.pow(currentPos.y - birthPos.y, 2) +
-            Math.pow(currentPos.z - birthPos.z, 2)
-        );
-
-        // Use a larger multiplier to ensure both points are visible
-        const cameraDistance = Math.max(distance * 1.5, 100); // Minimum distance of 100
-
-        // Camera positioned to see the full path from an angle
+        // Position camera at Earth's surface on the start date, looking up at current position
+        // Camera positioned very close to birth position (like standing on Earth)
         this.camera.position.set(
-            midX + cameraDistance * 0.5,
-            midY + cameraDistance * 0.3,
-            midZ + cameraDistance * 0.8
+            birthPos.x,
+            birthPos.y + 2, // Slightly above the surface
+            birthPos.z + 5  // Just in front of the position
         );
-        this.camera.lookAt(midX, midY, midZ);
 
-        // Update controls target to center of journey
+        // Look up at the current position (distant dot in the sky)
+        this.camera.lookAt(currentPos.x, currentPos.y, currentPos.z);
+
+        // Update controls target to current position
         if (this.controls) {
-            this.controls.target.set(midX, midY, midZ);
+            this.controls.target.set(currentPos.x, currentPos.y, currentPos.z);
         }
     }
 
@@ -809,22 +797,35 @@ class CosmicVisualization {
     }
 
     updateCameraWarpJump(startPos, endPos, progress) {
-        // Linear interpolation from start to end (warp jump style)
-        const x = startPos.x + (endPos.x - startPos.x) * progress;
-        const y = startPos.y + (endPos.y - startPos.y) * progress;
-        const z = startPos.z + (endPos.z - startPos.z) * progress;
+        // Start from Earth's surface at birth position, warp toward current position
+        const startCamPos = {
+            x: startPos.x,
+            y: startPos.y + 2,
+            z: startPos.z + 5
+        };
 
-        // Camera positioned slightly behind current progress point
-        this.camera.position.set(x, y, z + 30);
+        // End at current position with slight offset
+        const endCamPos = {
+            x: endPos.x,
+            y: endPos.y + 10,
+            z: endPos.z + 30
+        };
 
-        // Look toward the destination
+        // Linear interpolation of camera position (warp effect)
+        const x = startCamPos.x + (endCamPos.x - startCamPos.x) * progress;
+        const y = startCamPos.y + (endCamPos.y - startCamPos.y) * progress;
+        const z = startCamPos.z + (endCamPos.z - startCamPos.z) * progress;
+
+        this.camera.position.set(x, y, z);
+
+        // Always look toward the destination (current position)
         this.camera.lookAt(endPos.x, endPos.y, endPos.z);
 
         // Add warp effect by making stars streak (increase fog density during warp)
         if (progress > 0.1 && progress < 0.9) {
-            // Warping phase - intensify fog
+            // Warping phase - intensify fog for star streaking effect
             if (this.scene.fog) {
-                this.scene.fog.density = 0.00015 + (Math.sin(progress * Math.PI) * 0.0002);
+                this.scene.fog.density = 0.00015 + (Math.sin(progress * Math.PI) * 0.0003);
             }
         } else {
             // Entry/exit phase - normal fog
