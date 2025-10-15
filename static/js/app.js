@@ -44,10 +44,6 @@ function initializeDateSelectors() {
         yearSelect.appendChild(option);
     }
 
-    // Set default to October 15, 1961
-    yearSelect.value = 1961;
-    monthSelect.value = '10';
-
     // Populate days (1-31)
     for (let day = 1; day <= 31; day++) {
         const option = document.createElement('option');
@@ -57,7 +53,9 @@ function initializeDateSelectors() {
         daySelect.appendChild(option);
     }
 
-    // Set default day to 15
+    // Set default to October 15, 1961 (after all options are populated)
+    yearSelect.value = '1961';
+    monthSelect.value = '10';
     daySelect.value = '15';
 
     // Update hidden date field when selects change
@@ -172,6 +170,9 @@ async function handleCalculate() {
         const extremeDate = birthDateInput.getAttribute('data-extreme-date');
         const eventName = birthDateInput.getAttribute('data-event-name');
 
+        console.log('Birth date input value:', birthDate);
+        console.log('Birth date input element:', birthDateInput);
+
         // Use extreme date if available
         if (extremeDate) {
             birthDate = extremeDate;
@@ -185,6 +186,7 @@ async function handleCalculate() {
 
         // Validate inputs before showing loading screen
         if (!birthDate) {
+            console.error('Birth date is empty! Input value:', birthDateInput.value);
             throw new Error('Please enter your birth date');
         }
 
