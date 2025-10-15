@@ -74,6 +74,9 @@ function initializeDateSelectors() {
     yearSelect.addEventListener('change', updateHiddenDate);
     monthSelect.addEventListener('change', updateHiddenDate);
     daySelect.addEventListener('change', updateHiddenDate);
+
+    // Initialize hidden date field with default values
+    updateHiddenDate();
 }
 
 function setupEventListeners() {
