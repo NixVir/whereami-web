@@ -536,15 +536,15 @@ class CosmicVisualization {
         this.updateCelestialObjectColors(data.displacement.time_elapsed_years);
 
         // Position camera at Earth's surface on the start date, looking up at current position
-        // Camera positioned very close to birth position (like standing on Earth)
+        // Camera pulled back enough to see the birth marker
         this.camera.position.set(
-            birthPos.x,
-            birthPos.y + 2, // Slightly above the surface
-            birthPos.z + 5  // Just in front of the position
+            birthPos.x - 10,  // Pulled back on X axis
+            birthPos.y + 5,   // Above the birth position
+            birthPos.z + 20   // Well in front to see the marker
         );
 
-        // Look up at the current position (distant dot in the sky)
-        this.camera.lookAt(currentPos.x, currentPos.y, currentPos.z);
+        // Look at the birth position initially to see the red marker
+        this.camera.lookAt(birthPos.x, birthPos.y, birthPos.z);
 
         // Update controls target to current position
         if (this.controls) {
@@ -800,11 +800,11 @@ class CosmicVisualization {
     }
 
     updateCameraWarpJump(startPos, endPos, progress) {
-        // Start from Earth's surface at birth position, warp toward current position
+        // Start position matches initial camera setup - pulled back to see birth marker
         const startCamPos = {
-            x: startPos.x,
-            y: startPos.y + 2,
-            z: startPos.z + 5
+            x: startPos.x - 10,
+            y: startPos.y + 5,
+            z: startPos.z + 20
         };
 
         // End at current position with slight offset
@@ -821,7 +821,7 @@ class CosmicVisualization {
 
         this.camera.position.set(x, y, z);
 
-        // Always look toward the destination (current position)
+        // Look toward current position as we warp
         this.camera.lookAt(endPos.x, endPos.y, endPos.z);
 
         // Add warp effect by making stars streak (increase fog density during warp)
@@ -1292,12 +1292,12 @@ class CosmicVisualization {
         // We'll represent it as a semi-transparent spherical shell with particles
 
         // Create two layers for inner and outer Oort Cloud
-        // Adjusted for better visibility in the cosmic visualization
+        // Making VERY visible with bright particles
         const layers = [
-            { radius: 400, particleCount: 3000, size: 3, opacity: 0.4, color: 0x88CCFF },  // Inner Oort - increased visibility
-            { radius: 600, particleCount: 4000, size: 2.5, opacity: 0.3, color: 0xAADDFF }   // Outer Oort - increased visibility
+            { radius: 350, particleCount: 5000, size: 8, opacity: 0.8, color: 0x00FFFF },  // Inner Oort - very bright cyan
+            { radius: 500, particleCount: 6000, size: 6, opacity: 0.6, color: 0x88FFFF }   // Outer Oort - bright cyan
         ];
-        console.log('Oort Cloud layers defined:', layers.length, 'layers');
+        console.log('Oort Cloud layers defined:', layers.length, 'layers with radii:', layers.map(l => l.radius));
 
         layers.forEach(layer => {
             const geometry = new THREE.BufferGeometry();
