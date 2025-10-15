@@ -484,8 +484,8 @@ class CosmicVisualization {
         console.log('Current position:', currentPos);
 
         // Create position markers with new colors
-        this.birthMarker = this.createPositionMarker(birthPos, 0x8B0000, 'Birth');  // Dark red
-        this.currentMarker = this.createPositionMarker(currentPos, 0x00008B, 'Now');  // Dark blue
+        this.birthMarker = this.createPositionMarker(birthPos, 0x8B0000, "Earth's Position at Start Date");  // Dark red
+        this.currentMarker = this.createPositionMarker(currentPos, 0x00008B, "Earth's Current Position");  // Dark blue
 
         // Get distance traveled for path scaling
         const distanceKm = data.displacement.magnitude_km;
