@@ -18,29 +18,36 @@ A web application that calculates and visualizes how far a person has traveled t
 ### Frontend
 - **Three.js (r160)** - 3D WebGL visualization
 - **Vanilla JavaScript** - No frameworks, pure JS
-- **CSS3** - Responsive design with backdrop filters
+- **CSS3** - Responsive design with backdrop filters and mobile optimizations
 - **HTML5** - Semantic markup
 
 ## Core Features
 
 ### 1. Journey Calculation
 - **Input:** Birth date (or any date in history/future)
+- **Default Date:** October 15, 1961 (provides 60+ year journey)
 - **Output:**
   - Distance traveled in kilometers and light-years
   - Time elapsed
   - Current cosmic velocity (~369 km/s relative to CMB)
   - Cosmic separation between birth and current positions
 
-### 2. 3D Visualization
+### 2. 3D Visualization with Auto-Play
 - **Three.js Scene Components:**
-  - Birth marker (dark red, positioned left)
-  - Now marker (dark blue, positioned right)
-  - Journey path connecting the two points
-  - Animated camera fly-through along the journey
+  - **Birth marker** (dark red "Earth's Position at Start Date")
+  - **Current marker** (dark blue "Earth's Current Position")
+  - **Journey path** connecting the two points
+  - **Warp jump animation** - Linear travel from start to current position with star streaking effect (8 seconds)
+  - **Auto zoom-out** - Reveals Andromeda Galaxy and cosmic context (6 seconds)
+  - **Oort Cloud** - Bright cyan spherical shell (radii 350-500 units, 11,000 particles)
   - Multiple particle systems (7,100 stars across 4 scale levels)
   - Realistic starfield (2,500 sprite-based stars with 5 color types)
   - 8 nebulae with particle systems
-  - Labeled celestial objects (Sirius, Betelgeuse, Polaris, Vega, Andromeda, Great Attractor, Orion Nebula, Pleiades)
+  - **9 Labeled celestial objects:**
+    - Sirius, Betelgeuse, Polaris, Vega, Orion Nebula, Pleiades
+    - **Andromeda Galaxy** (approaching at 110 km/s - extra large label)
+    - **Great Attractor** (we're moving toward it - extra large label)
+    - **Virgo Cluster** (galaxy cluster we approach - extra large label)
 
 ### 3. Interactive Controls
 - **Camera Controls:**
@@ -49,17 +56,18 @@ A web application that calculates and visualizes how far a person has traveled t
   - Scroll: Zoom in/out
   - Reset Camera button
 - **Animation Controls:**
-  - Play/Pause journey animation
+  - Play/Pause journey animation (auto-plays on results)
   - Restart animation
   - Speed slider (0.5x to 5x)
-  - **Timeline slider** (NEW) - Scrub through journey manually (0-100%)
+  - Timeline slider - Scrub through journey manually (0-100%)
 
 ### 4. Celestial Object Color Coding
 - **Red gradient:** Objects moving farther away (redshift)
 - **Blue gradient:** Objects moving closer (blueshift)
 - **Logarithmic scaling** applied for visual perception
-- Colors update based on time elapsed
+- Colors update dynamically based on time elapsed
 - Labels show percentage distance change and movement direction
+- **Approaching objects** (Andromeda, Great Attractor, Virgo) have extra-large labels (600×150)
 
 ### 5. Preset Events
 **Historical:**
@@ -74,11 +82,14 @@ A web application that calculates and visualizes how far a person has traveled t
 - Year 3000
 - Year 9999 (maximum supported)
 
-### 6. Mobile-Friendly Design
+### 6. Mobile-Responsive Design
+- **Bottom sheet layout** on mobile (panels at bottom, 30vh height)
+- Animation visible in top 70% of mobile screen
 - Responsive layouts for all screen sizes
 - Year/Month/Day dropdown selectors (better than date picker on mobile)
 - Stacked UI elements on small screens
 - Touch-friendly button sizes
+- Increased transparency for better animation visibility (0.65-0.7 rgba)
 
 ## Project Structure
 
@@ -93,11 +104,12 @@ web/
 ├── runtime.txt               # Python version specification
 ├── static/
 │   ├── css/
-│   │   └── style.css         # All application styling
+│   │   └── style.css         # All application styling + mobile optimizations
 │   └── js/
-│       ├── app.js            # Main application logic
-│       ├── visualization.js  # Three.js 3D visualization
-│       └── orbit-controls.js # Custom camera controls
+│       ├── app.js            # Main application logic + auto-play
+│       ├── visualization.js  # Three.js 3D visualization + warp jump + Oort Cloud
+│       ├── orbit-controls.js # Custom camera controls
+│       └── starfield.js      # (Legacy - not actively used)
 └── templates/
     └── index.html            # Single-page application template
 ```
@@ -113,27 +125,41 @@ web/
 ```
 
 ### Frontend Flow
-1. **User selects date** → Year/Month/Day dropdowns populate hidden date field
+1. **User sees default date** → October 15, 1961 pre-selected
 2. **Click Calculate** → Geocode location → POST to /api/calculate
 3. **Receive journey data** → Load into Three.js visualization
-4. **Display results** → Stats, animation controls, timeline slider
-5. **User interacts** → Scrub timeline, play animation, explore 3D space
+4. **Auto-play animation** → 500ms delay, then warp jump + zoom out
+5. **Display results** → Stats, animation controls, timeline slider
+6. **User interacts** → Scrub timeline, play animation, explore 3D space
 
 ### Visualization System (visualization.js)
 
 **Key Methods:**
 - `loadJourneyData(data)` - Initialize journey with backend data
-- `createJourneyPath(start, end, distance)` - Generate curved path
-- `playJourney()` - Animate camera along path (Birth → Now)
+- `createJourneyPath(start, end, distance)` - Generate path geometry
+- `playJourney()` - Two-phase animation: warp jump (8s) + zoom out (6s)
+- `updateCameraWarpJump(start, end, progress)` - Linear warp effect with fog modulation
+- `updateCameraZoomOut(center, progress)` - Smooth zoom to reveal Andromeda
 - `updateCelestialObjectColors(years)` - Apply red/blue shifts
+- `createOortCloud()` - Generate spherical shell with 11,000 particles
 - `setJourneyProgress(progress)` - Manual timeline control (0-1)
 - `resetCamera()` - Return to default view
 
 **Camera Positioning:**
+- Initial: `(birthPos.x-10, birthPos.y+5, birthPos.z+20)` - pulled back to see red marker
 - Birth point: `x = -distanceScale * 0.5` (left)
-- Now point: `x = distanceScale * 0.5` (right)
-- Camera distance: `1.5× distance between points` (minimum 100 units)
-- Target: Midpoint between Birth and Now
+- Current point: `x = distanceScale * 0.5` (right)
+- Looks at birth position initially, then toward current during warp
+- Final zoom shows Andromeda at [1500, 200, -1200]
+
+**Warp Jump Animation:**
+- **Phase 1 (8 seconds):** Linear travel from birth to current position
+- Camera follows straight line (not curved path)
+- Fog density varies (0.00015 → 0.00045) for star streaking effect
+- Uses `easeInOutQuad` easing
+- **Phase 2 (6 seconds):** Zoom out to show Andromeda Galaxy
+- Camera pulls back to wide view showing cosmic scale
+- Uses `easeInOutCubic` easing
 
 ### Celestial Color Algorithm
 
@@ -157,38 +183,63 @@ if (distanceChange > 0) {
 }
 ```
 
-## Recent Major Changes (Latest Session)
+## Recent Major Changes (Current Session)
 
-### Timeline Slider Feature
-- Added range input (0-100%) below animation controls
-- Real-time percentage display
-- Auto-pause when scrubbing
-- Bi-directional sync with playback
+### Mobile Animation Visibility Fix
+- Changed panel layout from centered to **bottom sheet** style on mobile
+- Panels now at bottom with **30vh max-height** (only 30% of screen)
+- **70% of mobile screen** shows 3D animation unobstructed
+- Increased panel transparency (0.65-0.7 rgba) for better background visibility
+- Rounded top corners only (20px 20px 0 0) for modern sheet pattern
 
-### Improved Date Selection
-- Replaced HTML5 date input with Year/Month/Day dropdowns
-- Years from 1900 to 2125 (scrollable, easy to select distant years)
-- Better mobile UX (no calendar popup)
-- Works seamlessly with preset buttons
+### Position Marker Label Updates
+- "Birth" → **"Earth's Position at Start Date"**
+- "Now" → **"Earth's Current Position"**
+- Multi-line support added (word wrap at 480px width)
+- Canvas size increased: 256×128 → 512×256 for clarity
+- Label scale: 10×5 → 20×10 for readability
+
+### Warp Jump Animation
+- Replaced confusing curved path with **linear warp jump**
+- Straight-line travel from start date to current position
+- **Star streaking effect** via fog density modulation
+- Two-phase animation: warp (8s) + zoom out (6s)
+- **Auto-play** enabled - animation starts automatically after results load
+- Camera positioned to see start marker clearly
+
+### Celestial Object Enhancements
+- Added **Andromeda Galaxy** as approaching object (110 km/s)
+- Added **Virgo Cluster** as major approaching destination
+- Updated **Great Attractor** velocity (we move toward it)
+- All three approaching objects have **3x label size** (600×150)
+- All three have **2x marker size** (80×80)
+- All other celestial labels increased to **2x size** (400×100)
+
+### Oort Cloud Implementation
+- Two-layer spherical shell at radii 350 and 500 units
+- **11,000 particles** total (5,000 inner + 6,000 outer)
+- **Bright cyan color** (#00FFFF, #88FFFF) for high visibility
+- Large particle sizes (8 and 6) with high opacity (0.8, 0.6)
+- Additive blending for glow effect
+- Labeled "Oort Cloud - Outer boundary of Solar System"
+- Positioned at (0,0,0) encompassing the journey
+
+### Default Date Change
+- Changed from current year to **October 15, 1961**
+- Provides meaningful 60+ year journey by default
+- Demonstrates substantial cosmic travel distance
+
+### Camera Position Fix
+- Initial camera pulled back: `(birthPos.x-10, birthPos.y+5, birthPos.z+20)`
+- Red birth marker now **clearly visible** at animation start
+- Camera looks at birth position initially (not current)
+- Matches warp jump starting position for smooth animation
 
 ### UI/UX Refinements
-- Changed header: "During Your Lifespan" → "Distance Traveled Since Birth"
-- Journey summary: Removed location text, shows only age
-- Moved Play button directly below header (more prominent)
-- Made camera controls persistent (no auto-hide)
-- Added Reset Camera button
-
-### Frame of Reference Indicator
-- Top-right corner display
-- "Frame of Reference: Cosmic Microwave Background (CMB)"
-- Subtitle: "All distances measured relative to the CMB rest frame"
-- Always visible, high z-index (1001)
-
-### Journey Orientation
-- Birth point always on left
-- Now point always on right
-- Animation flows Birth → Now (left to right)
-- Both markers guaranteed visible in initial view
+- Header changed: "Distance Traveled Since Birth" → **"Distance Traveled Since Date"**
+- Frame of reference indicator always visible (top-right, z-index 1001)
+- Journey orientation: Birth (left) → Current (right)
+- All preset buttons and date selectors working seamlessly
 
 ## Performance Optimizations
 
@@ -205,9 +256,9 @@ if (distanceChange > 0) {
 - All stars of same type share single texture
 
 ### Code Cleanup
-- Removed redundant starfield.js (duplicate canvas animation)
-- Removed debug console.log statements from production
-- Cleaned up unused CSS
+- Removed redundant starfield.js canvas animation
+- Streamlined particle systems
+- Optimized material reuse
 
 ## Known Limitations
 
@@ -216,6 +267,7 @@ if (distanceChange > 0) {
 3. **Time Zone:** Hardcoded to UTC
 4. **Browser Support:** Requires WebGL support (modern browsers only)
 5. **Three.js Version:** Using r160 with deprecated script includes (should migrate to ES modules)
+6. **Oort Cloud Scale:** May appear too small/large depending on journey distance
 
 ## Configuration & Deployment
 
@@ -242,7 +294,7 @@ None required - all configuration is hardcoded for simplicity
 
 1. **Location Selection:** Allow users to input birth/current locations
 2. **Time Precision:** Add time-of-day selection (currently defaults to 12:00 UTC)
-3. **Velocity Breakdown:** Visualize individual velocity components (Earth rotation, orbit, galactic motion, etc.)
+3. **Velocity Breakdown:** Visualize individual velocity components
 4. **Journey Comparison:** Compare multiple people's journeys side-by-side
 5. **Export Features:**
    - Download journey visualization as video
@@ -253,42 +305,52 @@ None required - all configuration is hardcoded for simplicity
 8. **Three.js Migration:** Move to ES modules (r160+ recommended approach)
 9. **Real-time Mode:** Show live position updates as time passes
 10. **AR Mode:** View journey in augmented reality on mobile devices
+11. **Kuiper Belt:** Add another solar system boundary visualization
+12. **Heliosphere:** Visualize the Sun's magnetic influence bubble
 
 ## Debug & Troubleshooting
 
 ### Console Logging
 Key debug messages to look for:
 - `✅ Camera controls initialized!` - Controls setup successful
+- `🌨️ Creating Oort Cloud...` - Oort Cloud initialization started
+- `✅ Oort Cloud created successfully with label` - Oort Cloud rendered
 - `🎨 Updating celestial object colors for X years` - Color coding active
+- `Auto-playing journey animation` - Auto-play triggered
 - `📷 Camera reset to default view` - Reset camera triggered
 
 ### Common Issues
 
-**Celestial objects not showing colors:**
-- Check console for "⚠️ Cannot update celestial colors"
-- Verify `celestialObjects` and `celestialLabels` are initialized
-- Ensure `updateCelestialObjectColors()` is called after journey loads
+**Oort Cloud not visible:**
+- Check console for "🌨️ Creating Oort Cloud..." message
+- Verify particle count and radii in logs
+- Try manually zooming out with scroll wheel
+- Check if camera is positioned inside the cloud
 
-**Preset buttons not visible:**
-- Scroll down in input panel (they're below date selectors)
-- Check panel `max-height: 85vh` allows scrolling
+**Animation not auto-playing:**
+- Verify 500ms delay after loadJourneyData
+- Check `isPlaying` flag in console
+- Ensure playJourney() is called after data loads
+- Look for "Auto-playing journey animation" log
 
-**Frame reference indicator hidden:**
-- Verify z-index: 1001 (higher than all other elements)
-- Check it's outside #ui-overlay (should be sibling to #visualization-container)
+**Birth marker not visible:**
+- Check camera position: should be (birthPos.x-10, birthPos.y+5, birthPos.z+20)
+- Verify camera lookAt is targeting birthPos
+- Birth marker should be clearly visible at animation start
 
-**Journey animation not playing:**
-- Verify `journeyCurve` is created successfully
-- Check `isPlaying` flag and controls.enabled state
-- Ensure `playJourney()` is called after journey data loads
+**Mobile animation blocked:**
+- Verify panels are at bottom with max-height: 30vh
+- Check panel transparency is 0.65-0.7 rgba
+- Animation should occupy top 70% of mobile viewport
 
 ## Code Quality Notes
 
 ### Strengths
 - Clean separation of concerns (calculation, visualization, UI)
 - Comprehensive error handling with console logging
-- Mobile-first responsive design
+- Mobile-first responsive design with modern UX patterns
 - Consistent coding style
+- Auto-play provides seamless user experience
 
 ### Technical Debt
 - Three.js using deprecated script includes
@@ -296,6 +358,7 @@ Key debug messages to look for:
 - Large monolithic JavaScript files (could be modularized)
 - No automated tests
 - No build process or minification
+- Oort Cloud scale may need dynamic adjustment based on journey distance
 
 ## Documentation & Resources
 
@@ -303,32 +366,43 @@ Key debug messages to look for:
 - **Astropy Docs:** https://docs.astropy.org/
 - **CMB Reference Frame:** Standard cosmological reference frame
 - **Cosmic Velocities:** Earth's motion ~369 km/s relative to CMB
+- **Oort Cloud:** Spherical shell at ~2,000-100,000 AU from Sun
+- **Andromeda Collision:** Expected in ~4.5 billion years
 
 ## Project Status
 
 **Current State:** Production-ready, deployed, fully functional
-**Last Major Update:** [Current Date]
+**Last Major Update:** October 2025
 **Active Issues:** None critical
-**Maintenance:** Stable, no ongoing development planned
-
-## Contact & Contribution
-
-This is a personal project demonstrating cosmic position calculations and 3D visualization. The code is available for reference and educational purposes.
+**Maintenance:** Stable, ongoing enhancements to visualization
 
 ## Session Summary
 
-This development session focused on:
-1. ✅ Adding interactive timeline slider
-2. ✅ Implementing preset event buttons
-3. ✅ Improving mobile date selection UX
-4. ✅ Enhancing celestial object color coding
-5. ✅ Adding frame of reference indicator
-6. ✅ Optimizing journey orientation and camera positioning
-7. ✅ Fixing formatTimeSpan errors and date validation
-8. ✅ Making UI more prominent and user-friendly
+This comprehensive development session focused on:
+
+### Completed Features ✅
+1. **Warp jump animation** - Linear travel with star streaking effect
+2. **Auto-play functionality** - Animation starts automatically
+3. **Mobile optimization** - Bottom sheet layout, 70% animation visibility
+4. **Position marker labels** - Clear, multi-line descriptions
+5. **Celestial object expansion** - Added Andromeda, Great Attractor, Virgo Cluster
+6. **Oort Cloud visualization** - 11,000-particle bright cyan sphere
+7. **Label size increases** - All celestial objects 2-3x larger
+8. **Camera positioning** - Birth marker clearly visible at start
+9. **Default date** - October 15, 1961 for meaningful demo
+10. **Text updates** - "Distance Traveled Since Date" header
+
+### Technical Improvements 🔧
+- Two-phase animation system (warp + zoom)
+- Fog modulation for star streaking
+- Multi-line text rendering with word wrap
+- Dynamic camera positioning based on journey scale
+- Additive blending for Oort Cloud glow effect
+- Mobile-specific CSS with bottom sheet pattern
 
 All features tested and deployed to production at https://whereami-web.vercel.app/
 
 ---
 
+*Last Updated: October 2025*
 *Generated with Claude Code - A comprehensive guide to the Where Am I? Cosmic Position Calculator project.*
